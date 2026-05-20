@@ -1,0 +1,11 @@
+# This directory holds auto-generated Alembic migration revision files.
+# Do NOT manually edit files in this folder.
+# 
+# To generate a new migration after changing models:
+#   alembic revision --autogenerate -m "describe your change"
+#
+# To apply migrations:
+#   alembic upgrade head
+#
+# To rollback one step:
+#   alembic downgrade -1
