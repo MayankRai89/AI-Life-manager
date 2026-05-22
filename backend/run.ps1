@@ -1,4 +1,5 @@
 # Start PostgreSQL and Redis
+$env:PYTHONUTF8 = "1"
 Write-Host "Starting Docker containers..."
 docker-compose up postgres redis -d
 
@@ -10,7 +11,8 @@ if ($LASTEXITCODE -ne 0) {
 
 # Activate virtual environment and run uvicorn
 Write-Host "Activating virtual environment and starting FastAPI..."
-$env:VIRTUAL_ENV = "$PSScriptRoot\venv"
+$env:VIRTUAL_ENV = "$PSScriptRoot\.venv"
 $env:Path = "$env:VIRTUAL_ENV\Scripts;$env:Path"
 
 uvicorn main:app --reload
+
