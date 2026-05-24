@@ -21,11 +21,14 @@ import json
 
 # ── LLM Instance ──────────────────────────────────────
 def get_llm(temperature: float = 0.7) -> ChatOpenAI:
-    return ChatOpenAI(
-        model=settings.OPENAI_MODEL,
-        temperature=temperature,
-        openai_api_key=settings.OPENAI_API_KEY,
-    )
+    kwargs = {
+        "model": settings.OPENAI_MODEL,
+        "temperature": temperature,
+        "openai_api_key": settings.OPENAI_API_KEY,
+    }
+    if settings.OPENAI_BASE_URL:
+        kwargs["base_url"] = settings.OPENAI_BASE_URL
+    return ChatOpenAI(**kwargs)
 
 
 # ══════════════════════════════════════════════════════
@@ -34,20 +37,37 @@ def get_llm(temperature: float = 0.7) -> ChatOpenAI:
 
 DAY_PLANNER_PROMPT = ChatPromptTemplate.from_messages([
     ("system", """You are an empathetic AI life coach. Your job is to create a compassionate, 
-realistic day plan based on how the user feels right now.
+realistic day plan based on how the user feels right now, their recent history, and pending tasks.
 
 Rules:
 - If mood score is low (1-4): Suggest gentle, low-energy tasks. Be encouraging.
 - If mood score is medium (5-7): Balance productive tasks with breaks.
 - If mood score is high (8-10): Schedule challenging tasks; momentum is high.
+- Look at the user's recent history to avoid repeating tasks they just completed or suggesting things they struggled with recently.
 - Always include time for meals, short walks, and rest.
 - Keep the plan realistic for a single day.
-- Respond in a warm, human tone — not robotic.
 
-Return a structured day plan in plain text with time blocks."""),
+Return ONLY a valid JSON object with the following structure:
+{{
+  "plan_message": "A warm, 2-3 sentence greeting and summary of the plan.",
+  "suggested_tasks": [
+    {{
+      "title": "Short descriptive title",
+      "description": "Why this task makes sense right now",
+      "estimated_time": "e.g., 9:00 AM - 9:30 AM",
+      "energy_required": "low"
+    }}
+  ]
+}}
+Note: energy_required must be 'low', 'medium', or 'high'.
+No extra text outside the JSON.
+"""),
     
     ("human", """Current mood: {mood} (score: {mood_score}/10)
 User note: {note}
+
+Recent History (last 3 days):
+{history_json}
 
 Pending tasks (JSON):
 {tasks_json}
@@ -61,8 +81,9 @@ async def generate_day_plan(
     mood_score: int,
     note: Optional[str],
     tasks: list[dict],
-) -> str:
-    """Generate an AI-powered day plan based on user's current mood."""
+    history: list[dict],
+) -> dict:
+    """Generate an AI-powered day plan based on user's current mood and history."""
     llm = get_llm(temperature=0.8)
     chain = DAY_PLANNER_PROMPT | llm
 
@@ -70,10 +91,22 @@ async def generate_day_plan(
         "mood": mood,
         "mood_score": mood_score,
         "note": note or "No additional notes",
+        "history_json": json.dumps(history, indent=2, default=str),
         "tasks_json": json.dumps(tasks, indent=2, default=str),
     })
 
-    return result.content
+    try:
+        raw = result.content.strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        return json.loads(raw)
+    except Exception:
+        return {
+            "plan_message": "I'm having trouble thinking clearly right now. Please take it easy today.",
+            "suggested_tasks": []
+        }
 
 
 # ══════════════════════════════════════════════════════

@@ -97,8 +97,15 @@ class DayPlanRequest(BaseModel):
     mood_score: int = Field(..., ge=1, le=10)
     note: Optional[str] = None
 
+class SuggestedTask(BaseModel):
+    title: str
+    description: str
+    estimated_time: str
+    energy_required: EnergyLevel
+
 class DayPlanResponse(BaseModel):
-    plan: str
+    plan_message: str
+    suggested_tasks: List[SuggestedTask]
     prioritized_tasks: List[TaskResponse]
     health_nudges: List[str]
 

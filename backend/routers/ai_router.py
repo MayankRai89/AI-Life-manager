@@ -8,8 +8,10 @@ from core.security import get_current_user
 from core.redis_client import cache_set, cache_get
 from models.user import User
 from models.task import Task, TaskStatus, MoodLog
-from schemas.schemas import DayPlanRequest, DayPlanResponse, MoodLogCreate, MoodLogResponse, TaskResponse
+from schemas.schemas import DayPlanRequest, DayPlanResponse, MoodLogCreate, MoodLogResponse, TaskResponse, SuggestedTask
 from services.ai_service import generate_day_plan, prioritize_tasks, generate_health_nudges
+from datetime import datetime, timedelta
+from pydantic import BaseModel
 import hashlib, json
 
 router = APIRouter(prefix="/api/ai", tags=["AI"])
@@ -47,15 +49,26 @@ async def create_day_plan(
     ]
 
     # Cache key based on mood + task ids (avoid repeat AI calls)
-    cache_key = f"dayplan:{current_user.id}:{data.mood}:{data.mood_score}"
+    cache_key = f"dayplan_v2:{current_user.id}:{data.mood}:{data.mood_score}"
     cached = await cache_get(cache_key)
     if cached:
         return cached
 
+    # Fetch recent history (last 3 days)
+    three_days_ago = datetime.utcnow() - timedelta(days=3)
+    history_result = await db.execute(
+        select(MoodLog).where(
+            MoodLog.user_id == current_user.id,
+            MoodLog.logged_at >= three_days_ago
+        ).order_by(MoodLog.logged_at.desc())
+    )
+    history_logs = history_result.scalars().all()
+    history_dicts = [{"mood": l.mood, "score": l.mood_score, "date": str(l.logged_at.date())} for l in history_logs]
+
     # Run AI features in parallel
     import asyncio
-    plan, priorities, nudges = await asyncio.gather(
-        generate_day_plan(data.mood, data.mood_score, data.note, tasks_dicts),
+    plan_dict, priorities, nudges = await asyncio.gather(
+        generate_day_plan(data.mood, data.mood_score, data.note, tasks_dicts, history_dicts),
         prioritize_tasks(data.mood, data.mood_score, tasks_dicts),
         generate_health_nudges(data.mood, data.mood_score, data.note),
     )
@@ -84,13 +97,14 @@ async def create_day_plan(
         mood=data.mood,
         mood_score=data.mood_score,
         note=data.note,
-        ai_plan=plan,
+        ai_plan=plan_dict.get("plan_message", ""),
     )
     db.add(mood_log)
     await db.flush()
 
     response = {
-        "plan": plan,
+        "plan_message": plan_dict.get("plan_message", ""),
+        "suggested_tasks": plan_dict.get("suggested_tasks", []),
         "prioritized_tasks": [TaskResponse.model_validate(t).model_dump(mode="json") for t in sorted_tasks],
         "health_nudges": nudges,
     }
@@ -142,3 +156,32 @@ async def get_nudges(
     """Get fresh health nudges anytime."""
     nudges = await generate_health_nudges(mood, mood_score)
     return {"nudges": nudges}
+
+
+# ── POST /api/ai/save-plan ────────────────────────────
+class SavePlanRequest(BaseModel):
+    tasks: list[dict]
+
+@router.post("/save-plan")
+async def save_plan(
+    data: SavePlanRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    for t in data.tasks:
+        # Extract energy_required string, ensuring it's lowercase
+        energy_val = str(t.get("energy_required", "medium")).lower()
+        # Default to medium if the AI hallucinated an invalid value
+        if energy_val not in ["low", "medium", "high"]:
+            energy_val = "medium"
+            
+        new_task = Task(
+            user_id=current_user.id,
+            title=t.get("title", "New Task"),
+            description=t.get("description", "") + f" [AI Suggested Time: {t.get('estimated_time', '')}]",
+            energy_required=energy_val,
+            status=TaskStatus.pending
+        )
+        db.add(new_task)
+    await db.commit()
+    return {"message": "Plan saved successfully"}

@@ -1,6 +1,7 @@
 # pyrefly: ignore [missing-import]
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+from typing import Optional
 
 
 class Settings(BaseSettings):
@@ -21,6 +22,7 @@ class Settings(BaseSettings):
     # OpenAI
     OPENAI_API_KEY: str
     OPENAI_MODEL: str = "gpt-4o-mini"
+    OPENAI_BASE_URL: Optional[str] = None
 
     # Firebase (push notifications — optional)
     FIREBASE_CREDENTIALS_PATH: str = "firebase-credentials.json"
