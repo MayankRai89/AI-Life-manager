@@ -5,6 +5,7 @@ import { UserPlus } from 'lucide-react';
 
 const Register = () => {
   const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -15,17 +16,17 @@ const Register = () => {
     setLoading(true);
     setError('');
     try {
-      await api.post('/auth/register', { name, email, password });
+      await api.post('/auth/register', { name, username, email, password });
       // After registration, directly login or redirect to login
       const formData = new URLSearchParams();
-      formData.append('username', email);
+      formData.append('username', username);
       formData.append('password', password);
       
-      const response = await api.post('/auth/login', formData, {
+      await api.post('/auth/login', formData, {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
       });
       
-      localStorage.setItem('token', response.data.access_token);
+      // Using HttpOnly cookies, so just redirect to dashboard
       window.location.href = '/';
     } catch (err) {
       if (err.response?.status === 422) {
@@ -47,11 +48,11 @@ const Register = () => {
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', width: '100%' }}>
       <div className="glass-panel" style={{ width: '100%', maxWidth: '400px' }}>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{ display: 'inline-flex', background: 'var(--accent-bg)', padding: '16px', borderRadius: '50%', marginBottom: '16px' }}>
-            <UserPlus size={32} color="var(--accent-primary)" />
+          <div style={{ display: 'inline-flex', marginBottom: '16px' }}>
+            <UserPlus size={36} color="var(--accent-purple)" />
           </div>
-          <h2>Create Account</h2>
-          <p style={{ color: 'var(--text-secondary)' }}>Join AI Life Manager</p>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>Create Account</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>Join AI Life Manager</p>
         </div>
 
         {error && <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '14px' }}>{error}</div>}
@@ -66,6 +67,17 @@ const Register = () => {
               required 
               placeholder="Your Name"
               minLength={2}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>Username</label>
+            <input 
+              type="text" 
+              value={username} 
+              onChange={(e) => setUsername(e.target.value)} 
+              required 
+              placeholder="choose_a_username"
+              minLength={3}
             />
           </div>
           <div>

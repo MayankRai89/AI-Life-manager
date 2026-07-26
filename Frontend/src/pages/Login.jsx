@@ -4,7 +4,7 @@ import api from '../api';
 import { LogIn } from 'lucide-react';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -16,14 +16,13 @@ const Login = () => {
     try {
       // Assuming FastAPI OAuth2PasswordRequestForm
       const formData = new URLSearchParams();
-      formData.append('username', email);
+      formData.append('username', username);
       formData.append('password', password);
       
-      const response = await api.post('/auth/login', formData, {
+      await api.post('/auth/login', formData, {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
       });
       
-      localStorage.setItem('token', response.data.access_token);
       window.location.href = '/';
     } catch (err) {
       setError(err.response?.data?.detail || 'Login failed. Please check your credentials.');
@@ -36,24 +35,24 @@ const Login = () => {
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', width: '100%' }}>
       <div className="glass-panel" style={{ width: '100%', maxWidth: '400px' }}>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{ display: 'inline-flex', background: 'var(--accent-bg)', padding: '16px', borderRadius: '50%', marginBottom: '16px' }}>
-            <LogIn size={32} color="var(--accent-primary)" />
+          <div style={{ display: 'inline-flex', marginBottom: '16px' }}>
+            <LogIn size={36} color="var(--accent-purple)" />
           </div>
-          <h2>Welcome Back</h2>
-          <p style={{ color: 'var(--text-secondary)' }}>Sign in to your AI Life Manager</p>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>Welcome Back</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>Sign in to your AI Life Manager</p>
         </div>
 
         {error && <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '14px' }}>{error}</div>}
 
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>Email</label>
+            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>Username</label>
             <input 
-              type="email" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
+              type="text" 
+              value={username} 
+              onChange={(e) => setUsername(e.target.value)} 
               required 
-              placeholder="you@example.com"
+              placeholder="your_username"
             />
           </div>
           <div>

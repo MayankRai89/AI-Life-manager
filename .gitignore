@@ -30,6 +30,7 @@ ENV/
 venv.bak/
 
 # ── Package / Build ───────────────────────────────────
+node_modules/
 build/
 dist/
 *.egg-info/

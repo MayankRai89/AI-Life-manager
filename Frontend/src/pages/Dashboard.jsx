@@ -10,6 +10,7 @@ import {
   Plus,
   Home,
   BarChart2,
+  Activity,
   Book,
   Settings,
   Mic,
@@ -46,8 +47,12 @@ const Dashboard = () => {
   const [suggestedTasks, setSuggestedTasks] = useState([]);
   const [showPlanModal, setShowPlanModal] = useState(false);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
+  const handleLogout = async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch (e) {
+      console.error(e);
+    }
     window.location.href = "/login";
   };
 
@@ -182,9 +187,6 @@ const Dashboard = () => {
 
   return (
     <>
-      <div className="ai-background"></div>
-      <div className="ai-background-overlay"></div>
-
       <div className="dashboard-layout">
         {/* Header */}
         <header
@@ -200,7 +202,6 @@ const Dashboard = () => {
             <Sparkles size={24} color="var(--accent-purple)" />
             <h1
               style={{ fontSize: "1.25rem", fontWeight: "600" }}
-              className="glow-text"
             >
               AI Life Manager
             </h1>
@@ -468,14 +469,15 @@ const Dashboard = () => {
             className="dashboard-center"
           >
             <div
-              className="glass-panel floating"
+              className="glass-panel"
               style={{
                 maxWidth: "450px",
                 width: "100%",
-                padding: "24px",
+                padding: "32px",
                 display: "flex",
                 flexDirection: "column",
-                gap: "8px",
+                gap: "12px",
+                textAlign: "center",
               }}
             >
               <h2
@@ -489,7 +491,7 @@ const Dashboard = () => {
                 <Sparkles size={20} color="var(--accent-purple)" />
                 Good evening, {user?.name || "User"} 🌙
               </h2>
-              <p style={{ color: "var(--text-secondary)", marginLeft: "28px" }}>
+              <p style={{ color: "var(--text-secondary)" }}>
                 How can I help you grow today?
               </p>
             </div>
@@ -709,13 +711,13 @@ const Dashboard = () => {
           <div className="nav-item active">
             <Home size={20} /> Home
           </div>
-          <div className="nav-item">
-            <BarChart2 size={20} /> Insights
+          <div className="nav-item" onClick={() => window.location.href = '/workout'} style={{cursor: 'pointer'}}>
+            <Activity size={20} /> Workout
           </div>
 
-          <div style={{ position: "relative", top: "-16px" }}>
+          <div style={{ position: "relative", top: "-16px", transform: "translateY(-4px)" }}>
             <div className="nav-orb">
-              <Sparkles size={24} color="white" />
+              <Sparkles size={22} color="white" />
             </div>
           </div>
 
