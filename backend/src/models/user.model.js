@@ -20,7 +20,6 @@ const UserSchema = new Schema(
     passwordHash: {
       type: String,
       required: function () {
-        // Not required if user signed up via OAuth (Google/Apple)
         return !this.authProvider || this.authProvider === "local";
       },
     },
@@ -30,12 +29,12 @@ const UserSchema = new Schema(
       default: "local",
     },
     authProviderId: {
-      type: String, // external ID from Google/Apple, if applicable
+      type: String,
       default: null,
     },
     timezone: {
       type: String,
-      default: "UTC", // e.g. "Asia/Kolkata" — critical for reminder firing times
+      default: "UTC",
     },
     preferences: {
       preferredSuggestionTypes: {
@@ -55,17 +54,15 @@ const UserSchema = new Schema(
     },
     isActive: {
       type: Boolean,
-      default: true, // supports soft-delete / account deactivation
+      default: true,
     },
     lastLoginAt: {
       type: Date,
       default: null,
     },
   },
-  { timestamps: true }, // adds createdAt, updatedAt automatically
+  { timestamps: true },
 );
-
-// Never return passwordHash when converting to JSON (e.g. in API responses)
 UserSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.passwordHash;
