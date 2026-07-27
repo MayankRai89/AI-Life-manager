@@ -15,6 +15,12 @@ if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
 
+const authRoutes = require('./routes/auth.routes');
+const errorHandler = require('./middleware/error.middleware');
+
+// Routes
+app.use('/api/auth', authRoutes);
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Server is running' });
@@ -24,5 +30,8 @@ app.get('/health', (req, res) => {
 app.get('/', (req, res) => {
   res.send('AI Life Manager API');
 });
+
+// Global error handler
+app.use(errorHandler);
 
 module.exports = app;
