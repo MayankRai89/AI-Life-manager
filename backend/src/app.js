@@ -16,10 +16,20 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 const authRoutes = require('./routes/auth.routes');
+const taskRoutes = require('./routes/task.routes');
+const aiRoutes = require('./routes/ai.routes');
+const workoutRoutes = require('./routes/workout.routes');
+const moodRoutes = require('./routes/mood.routes');
+const reminderRoutes = require('./routes/reminder.routes');
 const errorHandler = require('./middleware/error.middleware');
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/tasks', taskRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/workouts', workoutRoutes);
+app.use('/api/mood-checkin', moodRoutes);
+app.use('/api/reminders', reminderRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

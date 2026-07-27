@@ -14,18 +14,13 @@ const Login = () => {
     setLoading(true);
     setError('');
     try {
-      // Assuming FastAPI OAuth2PasswordRequestForm
-      const formData = new URLSearchParams();
-      formData.append('username', username);
-      formData.append('password', password);
-      
-      await api.post('/auth/login', formData, {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-      });
-      
+      const res = await api.post('/auth/login', { email: username, password });
+      if (res.data?.data?.accessToken) {
+        localStorage.setItem('accessToken', res.data.data.accessToken);
+      }
       window.location.href = '/';
     } catch (err) {
-      setError(err.response?.data?.detail || 'Login failed. Please check your credentials.');
+      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }

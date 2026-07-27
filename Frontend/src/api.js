@@ -1,23 +1,23 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8000/api', // Backend base URL
+  baseURL: 'http://localhost:5000/api',
   withCredentials: true,
 });
 
-// Remove manual token interceptor as we now use HTTP-only cookies
 api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('accessToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
-// Response interceptor to handle errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Handle unauthorized errors (token expiration, etc.)
     if (error.response && error.response.status === 401) {
-      // Redirect to login
-      window.location.href = '/login';
+      localStorage.removeItem('accessToken');
     }
     return Promise.reject(error);
   }

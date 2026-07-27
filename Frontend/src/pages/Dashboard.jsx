@@ -53,6 +53,7 @@ const Dashboard = () => {
     } catch (e) {
       console.error(e);
     }
+    localStorage.removeItem("accessToken");
     window.location.href = "/login";
   };
 
@@ -62,8 +63,8 @@ const Dashboard = () => {
         api.get("/auth/me"),
         api.get("/tasks/"),
       ]);
-      setUser(userRes.data);
-      setTasks(tasksRes.data);
+      setUser(userRes.data?.data?.user || userRes.data);
+      setTasks(Array.isArray(tasksRes.data) ? tasksRes.data : tasksRes.data?.tasks || []);
     } catch (err) {
       console.error(err);
       if (err.response?.status === 401) {

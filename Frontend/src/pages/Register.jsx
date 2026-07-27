@@ -16,29 +16,13 @@ const Register = () => {
     setLoading(true);
     setError('');
     try {
-      await api.post('/auth/register', { name, username, email, password });
-      // After registration, directly login or redirect to login
-      const formData = new URLSearchParams();
-      formData.append('username', username);
-      formData.append('password', password);
-      
-      await api.post('/auth/login', formData, {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-      });
-      
-      // Using HttpOnly cookies, so just redirect to dashboard
+      const res = await api.post('/auth/register', { name, email, password });
+      if (res.data?.data?.accessToken) {
+        localStorage.setItem('accessToken', res.data.data.accessToken);
+      }
       window.location.href = '/';
     } catch (err) {
-      if (err.response?.status === 422) {
-        const detail = err.response.data.detail;
-        if (Array.isArray(detail)) {
-          setError(detail.map(d => `${d.loc.at(-1)}: ${d.msg}`).join(', '));
-        } else {
-          setError(String(detail));
-        }
-      } else {
-        setError(err.response?.data?.detail || 'Registration failed. Please try again.');
-      }
+      setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
