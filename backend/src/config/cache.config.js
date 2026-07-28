@@ -12,15 +12,16 @@ try {
     lazyConnect: true,
     retryStrategy(times) {
       if (times > 3) {
-        console.warn("Redis connection failed. Continuing without Redis caching.");
-        return null; // Stop retrying
+        console.warn(
+          "Redis connection failed. Continuing without Redis caching.",
+        );
+        return null;
       }
       return Math.min(times * 100, 2000);
     },
   });
 
   redisClient.on("error", (err) => {
-    // Suppress unhandled error crashes when redis is not running locally
     console.warn("Redis Client Warning:", err.message);
   });
 } catch (e) {

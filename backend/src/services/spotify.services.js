@@ -243,13 +243,20 @@ const curatedMoodTracks = {
   ]
 };
 
+const { getCache, setCache } = require("../utils/cache.utils");
+
 /**
- * Step 2: Search for a matching playlist via RapidAPI
+ * Step 2: Search for a matching playlist via RapidAPI with caching
  */
 async function findPlaylistForMood(mood) {
   const normalizedMood = (mood || 'calm').toLowerCase();
-  const queries = moodToSearchQuery[normalizedMood] || moodToSearchQuery['calm'];
+  const cacheKey = `spotify:playlist:${normalizedMood}`;
+  const cachedId = await getCache(cacheKey);
+  if (cachedId) {
+    return cachedId;
+  }
 
+  const queries = moodToSearchQuery[normalizedMood] || moodToSearchQuery['calm'];
   const rapidApiKey = process.env.RAPIDAPI_KEY;
   if (!rapidApiKey) {
     return null;
@@ -272,10 +279,13 @@ async function findPlaylistForMood(mood) {
       const playlists = data?.playlists?.items;
 
       if (playlists && playlists.length > 0) {
-        // extract playlist ID from URI or data
         const firstPlaylist = playlists[0];
         const uri = firstPlaylist?.data?.uri || firstPlaylist?.data?.id || '';
-        return uri.includes(':') ? uri.split(':').pop() : uri;
+        const playlistId = uri.includes(':') ? uri.split(':').pop() : uri;
+        if (playlistId) {
+          await setCache(cacheKey, playlistId, 86400); // cache for 24 hours
+          return playlistId;
+        }
       }
     } catch (err) {
       console.warn(`[Spotify Service] RapidAPI playlist search failed for query '${query}':`, err.message);
@@ -286,11 +296,19 @@ async function findPlaylistForMood(mood) {
 }
 
 /**
- * Step 3: Fetch tracks from a playlist via RapidAPI
+ * Step 3: Fetch tracks from a playlist via RapidAPI with caching
  */
 async function getTracksFromPlaylist(playlistId, limit = 10) {
+  if (!playlistId) return [];
+
+  const cacheKey = `spotify:tracks:${playlistId}:${limit}`;
+  const cachedTracks = await getCache(cacheKey);
+  if (cachedTracks && Array.isArray(cachedTracks) && cachedTracks.length > 0) {
+    return cachedTracks;
+  }
+
   const rapidApiKey = process.env.RAPIDAPI_KEY;
-  if (!rapidApiKey || !playlistId) return [];
+  if (!rapidApiKey) return [];
 
   try {
     const url = `https://spotify23.p.rapidapi.com/playlist_tracks/?id=${playlistId}&offset=0&limit=${limit}`;
@@ -307,7 +325,7 @@ async function getTracksFromPlaylist(playlistId, limit = 10) {
     const data = await response.json();
     if (!data?.items) return [];
 
-    return data.items
+    const tracks = data.items
       .filter(item => item?.track)
       .map(item => ({
         name: item.track.name,
@@ -317,6 +335,12 @@ async function getTracksFromPlaylist(playlistId, limit = 10) {
         albumArt: item.track.album?.images?.[0]?.url || 'https://i.scdn.co/image/ab67616d0000b27339798e21a221f736294d1377',
         duration: formatDurationMs(item.track.duration_ms),
       }));
+
+    if (tracks.length > 0) {
+      await setCache(cacheKey, tracks, 86400); // cache for 24 hours
+    }
+
+    return tracks;
   } catch (err) {
     console.warn('[Spotify Service] Error fetching playlist tracks from RapidAPI:', err.message);
     return [];
