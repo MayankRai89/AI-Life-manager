@@ -5,14 +5,17 @@ const User = require("../models/user.model");
 const ACCESS_TOKEN_EXPIRY = "15m";
 const REFRESH_TOKEN_EXPIRY = "30d";
 
+const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || "access_secret_fallback";
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || "refresh_secret_fallback";
+
 function signAccessToken(userId) {
-  return jwt.sign({ id: userId }, process.env.JWT_ACCESS_SECRET, {
+  return jwt.sign({ id: userId }, JWT_ACCESS_SECRET, {
     expiresIn: ACCESS_TOKEN_EXPIRY,
   });
 }
 
 function signRefreshToken(userId) {
-  return jwt.sign({ id: userId }, process.env.JWT_REFRESH_SECRET, {
+  return jwt.sign({ id: userId }, JWT_REFRESH_SECRET, {
     expiresIn: REFRESH_TOKEN_EXPIRY,
   });
 }
@@ -85,7 +88,7 @@ async function refreshAccessToken(refreshToken) {
 
   let decoded;
   try {
-    decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
   } catch (e) {
     const err = new Error("Invalid or expired refresh token");
     err.statusCode = 401;

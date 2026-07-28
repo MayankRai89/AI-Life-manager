@@ -21,6 +21,7 @@ const aiRoutes = require('./routes/ai.routes');
 const workoutRoutes = require('./routes/workout.routes');
 const moodRoutes = require('./routes/mood.routes');
 const reminderRoutes = require('./routes/reminder.routes');
+const spotifyRoutes = require('./routes/spotify.routes');
 const errorHandler = require('./middleware/error.middleware');
 
 // Routes
@@ -30,6 +31,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/workouts', workoutRoutes);
 app.use('/api/mood-checkin', moodRoutes);
 app.use('/api/reminders', reminderRoutes);
+app.use('/api/spotify', spotifyRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

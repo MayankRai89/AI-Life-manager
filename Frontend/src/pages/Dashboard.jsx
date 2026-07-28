@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import api from "../api";
 import TodoList from "../components/TodoList";
+import MoodSongRecommender from "../components/MoodSongRecommender";
 import {
   LogOut,
   CheckCircle2,
@@ -506,6 +507,11 @@ const Dashboard = () => {
             toggleTaskStatus={toggleTaskStatus}
           />
         </main>
+
+        {/* Mood-Based Song Recommendation System */}
+        <div style={{ paddingBottom: "100px" }}>
+          <MoodSongRecommender currentMood={mood} />
+        </div>
 
         {/* Edit Plan Modal */}
         {showPlanModal && (

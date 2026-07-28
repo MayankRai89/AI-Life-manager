@@ -16,7 +16,7 @@ async function register(req, res, next) {
       data: { user, accessToken, refreshToken },
     });
   } catch (err) {
-    next(err); // handled by error.middleware.js
+    next(err);
   }
 }
 
@@ -41,8 +41,6 @@ async function login(req, res, next) {
 // POST /api/auth/logout
 async function logout(req, res, next) {
   try {
-    // Stateless JWT: nothing to invalidate server-side unless a token blacklist
-    // (e.g. Redis) is added later. Client is responsible for discarding the token.
     res.status(200).json({
       success: true,
       message: "Logged out successfully",

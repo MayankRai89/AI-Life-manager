@@ -69,4 +69,4 @@ UserSchema.methods.toJSON = function () {
   return obj;
 };
 
-module.exports = mongoose.model("User", UserSchema);
+module.exports = mongoose.model("AI-Assistant", UserSchema);
