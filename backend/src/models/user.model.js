@@ -52,6 +52,24 @@ const UserSchema = new Schema(
         default: "system",
       },
     },
+    healthProfile: {
+      bloodGroup: { type: String, default: "" },
+      allergies: [{ type: String }],
+      conditions: [{ type: String }],
+      latestMetrics: {
+        type: Map,
+        of: new Schema(
+          {
+            value: String,
+            unit: String,
+            status: String,
+            updatedAt: { type: Date, default: Date.now },
+          },
+          { _id: false },
+        ),
+        default: {},
+      },
+    },
     isActive: {
       type: Boolean,
       default: true,

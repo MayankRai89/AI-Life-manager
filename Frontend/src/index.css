@@ -33,19 +33,55 @@ body {
   color: var(--text-primary);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
-  overflow: hidden; /* Prevent scrolling on the main view */
+  overflow-y: auto;
 }
 
-/* Background Gradients instead of images */
+/* AI Assistant Glowing Animations & Aesthetics */
 .ai-background {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.08), transparent 40%),
-              radial-gradient(circle at bottom left, rgba(13, 148, 136, 0.05), transparent 40%);
+  background: 
+    radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.12), transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(13, 148, 136, 0.1), transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.06), transparent 50%);
   z-index: -2;
+  pointer-events: none;
+}
+
+.ai-pulse-ring {
+  box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.6);
+  animation: pulse-ring 2s infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(99, 102, 241, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+  }
+}
+
+.ai-gradient-text {
+  background: linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #2dd4bf 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.ai-card-glow {
+  transition: all 0.3s ease;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.ai-card-glow:hover {
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 8px 25px -5px rgba(99, 102, 241, 0.25), 0 0 15px rgba(45, 212, 191, 0.1);
 }
 
 .ai-background-overlay {

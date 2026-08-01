@@ -3,42 +3,35 @@ import { motion } from "framer-motion";
 import api from "../api";
 import TodoList from "../components/TodoList";
 import MoodSongRecommender from "../components/MoodSongRecommender";
+import MedicalReportUpload from "../components/MedicalReportUpload";
+import HealthProfileWidget from "../components/HealthProfileWidget";
 import {
   LogOut,
-  CheckCircle2,
-  Circle,
   Sparkles,
-  Plus,
-  Home,
-  BarChart2,
-  Activity,
-  Book,
-  Settings,
   Mic,
-  Headphones,
-  Play,
-  SkipForward,
-  SkipBack,
-  Sun,
-  Brain,
-  Coffee,
-  BookOpen,
-  Moon,
-  Wind,
+  Bot,
+  Heart,
+  Calendar,
+  Music,
+  Activity,
+  Zap,
+  Volume2,
+  CheckCircle2,
+  ShieldCheck,
 } from "lucide-react";
 
 const Dashboard = () => {
   const [user, setUser] = useState(null);
   const [tasks, setTasks] = useState([]);
 
-  // Fake state for UI demonstration
+  // Active Tab Filter for tasks
   const [activeTab, setActiveTab] = useState("Today");
 
-  // Voice Input State
+  // Voice Input & AI Interaction State
   const [isListening, setIsListening] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const [aiMessage, setAiMessage] = useState(
-    "I'm here to understand you, guide you, and help you become your best self. Let's make today meaningful.",
+    "Hello! I am your 24/7 AI Life Assistant. I monitor your daily schedule, parse your medical reports, sync mood-based music, and optimize your routine every minute of the day.",
   );
 
   // AI Day Planner State
@@ -47,6 +40,7 @@ const Dashboard = () => {
   const [loadingPlan, setLoadingPlan] = useState(false);
   const [suggestedTasks, setSuggestedTasks] = useState([]);
   const [showPlanModal, setShowPlanModal] = useState(false);
+  const [healthRefresh, setHealthRefresh] = useState(0);
 
   const handleLogout = async () => {
     try {
@@ -65,7 +59,11 @@ const Dashboard = () => {
         api.get("/tasks/"),
       ]);
       setUser(userRes.data?.data?.user || userRes.data);
-      setTasks(Array.isArray(tasksRes.data) ? tasksRes.data : tasksRes.data?.tasks || []);
+      setTasks(
+        Array.isArray(tasksRes.data)
+          ? tasksRes.data
+          : tasksRes.data?.tasks || [],
+      );
     } catch (err) {
       console.error(err);
       if (err.response?.status === 401) {
@@ -75,7 +73,6 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData();
   }, [fetchData]);
 
@@ -123,7 +120,7 @@ const Dashboard = () => {
     setLoadingPlan(true);
     try {
       setAiMessage(
-        "Analyzing your mood and generating a personalized day plan...",
+        "Analyzing your mood, energy level, and health profile to generate your optimal day plan...",
       );
       const res = await api.post("/ai/day-plan", {
         mood,
@@ -134,23 +131,19 @@ const Dashboard = () => {
       setAiMessage(planMsg);
       setSuggestedTasks(res.data.suggested_tasks || []);
 
-      // If there are suggested tasks, show the modal
       if (res.data.suggested_tasks && res.data.suggested_tasks.length > 0) {
         setShowPlanModal(true);
       }
 
-      // Speak a brief confirmation instead of the whole plan to avoid endless speaking
       const synth = window.speechSynthesis;
       const utterance = new SpeechSynthesisUtterance(
-        "I have created your personalized day plan based on how you feel.",
+        "I have created your personalized day plan based on your current state.",
       );
       utterance.pitch = 1.1;
       synth.speak(utterance);
-
-      // We don't fetchData here anymore because tasks aren't saved yet!
     } catch (err) {
       console.error("Failed to generate plan", err);
-      setAiMessage("Sorry, I encountered an error while planning your day.");
+      setAiMessage("Sorry, I encountered an issue while generating your day plan.");
     } finally {
       setLoadingPlan(false);
     }
@@ -161,8 +154,8 @@ const Dashboard = () => {
       setLoadingPlan(true);
       await api.post("/ai/save-plan", { tasks: suggestedTasks });
       setShowPlanModal(false);
-      fetchData(); // Refresh the main to-do list
-      setAiMessage("Your new tasks have been added to your To-Do list!");
+      fetchData();
+      setAiMessage("Great! I have updated your daily task schedule.");
     } catch (err) {
       console.error(err);
       alert("Failed to save plan");
@@ -173,570 +166,257 @@ const Dashboard = () => {
 
   const handleChatSubmit = (e) => {
     if (e.key === "Enter" && chatInput.trim()) {
-      // Mock sending message
+      const userText = chatInput;
       setChatInput("");
-      const reply =
-        "I heard you! I'm still learning to process complex thoughts, but I'm here for you.";
+      const reply = `I'm processing "${userText}". As your AI Personal Assistant, I'm constantly taking care of your schedule, health, and wellbeing.`;
       setAiMessage(reply);
 
-      // Text-to-Speech Output
       const synth = window.speechSynthesis;
       const utterance = new SpeechSynthesisUtterance(reply);
-      utterance.pitch = 1.1; // Slightly futuristic/higher pitch
+      utterance.pitch = 1.05;
       synth.speak(utterance);
     }
   };
 
   return (
-    <>
-      <div className="dashboard-layout">
-        {/* Header */}
-        <header
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "24px",
-            zIndex: 10,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <Sparkles size={24} color="var(--accent-purple)" />
-            <h1
-              style={{ fontSize: "1.25rem", fontWeight: "600" }}
-            >
-              AI Life Manager
+    <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col p-4 sm:p-6 lg:p-8">
+      {/* Background AI Radial Glows */}
+      <div className="ai-background" />
+
+      {/* Header Bar */}
+      <header className="max-w-7xl w-full mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 pb-6 border-b border-slate-800/80 mb-8 z-10">
+        <div className="flex items-center gap-3">
+          <div className="relative p-2.5 rounded-2xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-cyan-500 shadow-lg shadow-indigo-500/20 ai-pulse-ring">
+            <Bot className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2">
+              <span className="ai-gradient-text">AI Life Manager</span>
             </h1>
+            <p className="text-xs text-slate-400 font-medium flex items-center gap-2">
+              <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              24/7 Personal AI Assistant & Companion
+            </p>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-            <span
-              style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}
-            >
-              {user?.email || "Loading..."}
-            </span>
-            <button
-              onClick={handleLogout}
-              className="btn-icon"
-              style={{ padding: "8px 16px", gap: "8px", fontSize: "0.9rem" }}
-            >
-              <LogOut size={16} /> Logout
-            </button>
-          </div>
-        </header>
+        </div>
 
-        {/* Main 3-Column Layout */}
-        <main className="dashboard-main">
-          {/* Left Panel: AI Companion */}
-          <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            style={{ display: "flex", flexDirection: "column", gap: "24px" }}
+        <div className="flex items-center gap-4">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300">
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <span>{user?.email || "Assistant Active"}</span>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-medium text-slate-300 hover:text-white transition-all shadow-sm"
           >
-            <div
-              className="glass-panel"
-              style={{
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                gap: "24px",
-              }}
-            >
-              <div>
-                <h2
-                  style={{
-                    fontSize: "1.1rem",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    marginBottom: "8px",
-                  }}
-                >
-                  <Sparkles size={18} color="var(--accent-purple)" /> AI
-                  Companion
-                </h2>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    fontSize: "0.8rem",
-                    color: "var(--success)",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "8px",
-                      height: "8px",
-                      borderRadius: "50%",
-                      background: "var(--success)",
-                      boxShadow: "0 0 8px var(--success)",
-                    }}
-                  ></div>
-                  Online
+            <LogOut className="w-4 h-4" />
+            <span>Logout</span>
+          </button>
+        </div>
+      </header>
+
+      {/* Hero AI Assistant Control Panel */}
+      <section className="max-w-7xl w-full mx-auto mb-8 z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="relative overflow-hidden rounded-3xl bg-slate-900/90 border border-indigo-500/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl ai-card-glow"
+        >
+          {/* Subtle Accent Glow */}
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            {/* Left AI Companion Avatar & Greeting */}
+            <div className="lg:col-span-7 space-y-4">
+              <div className="flex items-center gap-3">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold uppercase tracking-wider">
+                  <Sparkles className="w-3.5 h-3.5" /> AI Companion Online
+                </span>
+                <span className="text-xs text-slate-400">
+                  Carefully managing your life 24/7
+                </span>
+              </div>
+
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
+                Good day, <span className="ai-gradient-text">{user?.name || "Friend"}</span> 👋
+              </h2>
+
+              {/* AI Thought / Advice Card */}
+              <div className="bg-slate-950/70 border border-slate-800/90 rounded-2xl p-4 sm:p-5 flex items-start gap-3 shadow-inner">
+                <div className="p-2 rounded-xl bg-indigo-600/20 text-indigo-400 shrink-0 mt-0.5">
+                  <Bot className="w-5 h-5" />
+                </div>
+                <div className="space-y-1">
+                  <div className="text-xs font-semibold text-indigo-300">
+                    AI Personal Life Insight
+                  </div>
+                  <p className="text-sm text-slate-200 leading-relaxed">
+                    {aiMessage}
+                  </p>
                 </div>
               </div>
 
-              <p
-                style={{
-                  color: "var(--text-primary)",
-                  lineHeight: "1.6",
-                  fontSize: "0.95rem",
-                }}
-              >
-                {aiMessage}
-              </p>
-
-              <div
-                style={{
-                  border: "1px solid var(--border-glass)",
-                  borderRadius: "12px",
-                  padding: "16px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "16px",
-                }}
-              >
-                <div>
-                  <div
-                    style={{
-                      fontSize: "0.8rem",
-                      color: "var(--text-secondary)",
-                      marginBottom: "8px",
-                      display: "flex",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <span>Mood Detected</span>
-                    <span>{mood}</span>
-                  </div>
-                  <div
-                    style={{ display: "flex", gap: "8px", fontSize: "0.9rem" }}
-                  >
-                    {["tired", "neutral", "great"].map((m) => (
-                      <button
-                        key={m}
-                        onClick={() => setMood(m)}
-                        className="btn-icon"
-                        style={{
-                          flex: 1,
-                          padding: "4px",
-                          fontSize: "0.8rem",
-                          background:
-                            mood === m
-                              ? "rgba(139, 92, 246, 0.3)"
-                              : "transparent",
-                          borderColor:
-                            mood === m
-                              ? "var(--accent-purple)"
-                              : "var(--border-glass)",
-                        }}
-                      >
-                        {m}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <div
-                    style={{
-                      fontSize: "0.8rem",
-                      color: "var(--text-secondary)",
-                      marginBottom: "8px",
-                      display: "flex",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <span>Energy Level</span>
-                    <span>{moodScore}/10</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="1"
-                    max="10"
-                    value={moodScore}
-                    onChange={(e) => setMoodScore(parseInt(e.target.value))}
-                    style={{ width: "100%" }}
-                  />
-                </div>
-
-                <button
-                  onClick={generateDayPlan}
-                  disabled={loadingPlan}
-                  className="btn-icon"
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    background: "var(--accent-purple)",
-                    color: "white",
-                    border: "none",
-                  }}
-                >
-                  {loadingPlan ? "Processing..." : "Plan My Day 🧠"}
-                </button>
-              </div>
-
-              <div style={{ marginTop: "auto", position: "relative" }}>
+              {/* Quick AI Voice & Chat Bar */}
+              <div className="relative flex items-center">
                 <input
                   type="text"
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={handleChatSubmit}
-                  placeholder="Talk to me... (Press Enter to send)"
-                  style={{
-                    width: "100%",
-                    background: "transparent",
-                    border: "none",
-                    borderBottom: "1px solid var(--border-glass)",
-                    borderRadius: 0,
-                    paddingLeft: 0,
-                    paddingRight: "40px",
-                    color: "var(--text-primary)",
-                  }}
+                  placeholder="Ask your AI Assistant anything or speak your mind... (Press Enter)"
+                  className="w-full bg-slate-950/80 border border-slate-700/80 focus:border-indigo-500 rounded-2xl py-3.5 pl-4 pr-12 text-sm text-slate-100 placeholder-slate-500 shadow-lg transition-all"
                 />
                 <button
                   onClick={toggleListening}
-                  className="btn-icon"
-                  style={{
-                    position: "absolute",
-                    right: 0,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    border: "none",
-                    background: isListening
-                      ? "rgba(239, 68, 68, 0.8)"
-                      : "var(--accent-purple)",
-                    color: "white",
-                    borderRadius: "50%",
-                    padding: "8px",
-                    boxShadow: isListening
-                      ? "0 0 15px rgba(239, 68, 68, 0.8)"
-                      : "none",
-                    transition: "all 0.3s",
-                  }}
+                  className={`absolute right-2 p-2.5 rounded-xl transition-all ${
+                    isListening
+                      ? "bg-rose-600 text-white animate-pulse shadow-lg shadow-rose-600/40"
+                      : "bg-indigo-600 hover:bg-indigo-500 text-white shadow-md"
+                  }`}
+                  title={isListening ? "Listening..." : "Speak to AI Assistant"}
                 >
-                  <Mic size={16} />
+                  <Mic className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
-            {/* Music Player */}
-            <div
-              className="glass-panel"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "16px 24px",
-              }}
-            >
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "12px" }}
-              >
-                <Headphones size={20} color="var(--text-secondary)" />
-                <div>
-                  <div style={{ fontSize: "0.8rem", fontWeight: "bold" }}>
-                    Focus Mode
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "0.75rem",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
-                    Lo-fi Beats
-                  </div>
+            {/* Right Mood & Energy Dials */}
+            <div className="lg:col-span-5 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-5 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="text-xs font-semibold text-slate-300 flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-amber-400" /> Current State & Vitality
+                </div>
+                <span className="text-xs text-indigo-400 font-medium">Auto-Adapting</span>
+              </div>
+
+              {/* Mood Selector */}
+              <div>
+                <div className="flex justify-between text-xs text-slate-400 mb-2 font-medium">
+                  <span>How are you feeling right now?</span>
+                  <span className="capitalize text-indigo-300 font-semibold">{mood}</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {["tired", "neutral", "great"].map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => setMood(m)}
+                      className={`py-2 px-3 rounded-xl text-xs font-semibold capitalize transition-all border ${
+                        mood === m
+                          ? "bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-600/30"
+                          : "bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800"
+                      }`}
+                    >
+                      {m === "tired" ? "😴 Tired" : m === "neutral" ? "😐 Neutral" : "🚀 Great"}
+                    </button>
+                  ))}
                 </div>
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "16px",
-                  color: "var(--text-primary)",
-                }}
-              >
-                <SkipBack size={16} style={{ cursor: "pointer" }} />
-                <Play size={16} style={{ cursor: "pointer" }} />
-                <SkipForward size={16} style={{ cursor: "pointer" }} />
+
+              {/* Energy Level Slider */}
+              <div>
+                <div className="flex justify-between text-xs text-slate-400 mb-1 font-medium">
+                  <span>Energy Level</span>
+                  <span className="text-cyan-400 font-bold">{moodScore}/10</span>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  value={moodScore}
+                  onChange={(e) => setMoodScore(parseInt(e.target.value))}
+                  className="w-full accent-indigo-500 cursor-pointer h-2 bg-slate-800 rounded-lg"
+                />
               </div>
-            </div>
-          </motion.div>
 
-          {/* Center: AI Face & Greeting */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1.5, ease: "easeOut" }}
-            className="dashboard-center"
-          >
-            <div
-              className="glass-panel"
-              style={{
-                maxWidth: "450px",
-                width: "100%",
-                padding: "32px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "12px",
-                textAlign: "center",
-              }}
-            >
-              <h2
-                style={{
-                  fontSize: "1.4rem",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
+              {/* Plan Day Button */}
+              <button
+                onClick={generateDayPlan}
+                disabled={loadingPlan}
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 text-white font-semibold text-sm shadow-lg shadow-indigo-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                <Sparkles size={20} color="var(--accent-purple)" />
-                Good evening, {user?.name || "User"} 🌙
-              </h2>
-              <p style={{ color: "var(--text-secondary)" }}>
-                How can I help you grow today?
-              </p>
+                <Sparkles className="w-4 h-4" />
+                <span>{loadingPlan ? "Structuring Your Routine..." : "Generate AI Day Plan 🧠"}</span>
+              </button>
             </div>
-          </motion.div>
+          </div>
+        </motion.div>
+      </section>
 
-          {/* Right Panel: Tasks */}
+      {/* Main Grid: Life Pillars (Schedule, Health, Music) */}
+      <main className="max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 z-10 flex-1">
+        {/* Left Column: Tasks & Schedule (7 Cols) */}
+        <section className="lg:col-span-6 space-y-6">
           <TodoList
             tasks={tasks}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             toggleTaskStatus={toggleTaskStatus}
           />
-        </main>
+        </section>
 
-        {/* Mood-Based Song Recommendation System */}
-        <div style={{ paddingBottom: "100px" }}>
-          <MoodSongRecommender currentMood={mood} />
-        </div>
+        {/* Right Column: Medical & Health Vitals (6 Cols) */}
+        <section className="lg:col-span-6 space-y-6">
+          <MedicalReportUpload
+            onReportUploaded={() => setHealthRefresh((prev) => prev + 1)}
+          />
+          <HealthProfileWidget refreshTrigger={healthRefresh} />
+        </section>
+      </main>
 
-        {/* Edit Plan Modal */}
-        {showPlanModal && (
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: "rgba(0,0,0,0.7)",
-              backdropFilter: "blur(10px)",
-              zIndex: 100,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <div
-              className="glass-panel"
-              style={{
-                width: "90%",
-                maxWidth: "500px",
-                maxHeight: "80vh",
-                overflowY: "auto",
-                padding: "24px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "16px",
-              }}
-            >
-              <h2
-                style={{
-                  fontSize: "1.2rem",
-                  color: "var(--accent-purple)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-              >
-                <Sparkles size={20} /> Edit AI Day Plan
-              </h2>
-              <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>
-                Review the generated tasks and edit their titles or timings
-                before saving to your To-Do list.
-              </p>
+      {/* Mood & Soundtrack Companion */}
+      <section className="max-w-7xl w-full mx-auto my-8 z-10">
+        <MoodSongRecommender currentMood={mood} />
+      </section>
 
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "12px",
-                }}
-              >
-                {suggestedTasks.map((t, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      background: "rgba(255,255,255,0.05)",
-                      padding: "12px",
-                      borderRadius: "8px",
-                      border: "1px solid var(--border-glass)",
+      {/* Edit Plan Modal */}
+      {showPlanModal && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-lg w-full space-y-4 shadow-2xl">
+            <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-indigo-400" /> Edit AI Generated Day Plan
+            </h3>
+            <p className="text-xs text-slate-400">
+              Review and edit the suggested tasks before adding them to your daily schedule:
+            </p>
+
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+              {suggestedTasks.map((t, idx) => (
+                <div key={idx} className="bg-slate-950 border border-slate-800 p-3 rounded-xl flex items-center gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-indigo-400 shrink-0" />
+                  <input
+                    type="text"
+                    value={t.title}
+                    onChange={(e) => {
+                      const updated = [...suggestedTasks];
+                      updated[idx].title = e.target.value;
+                      setSuggestedTasks(updated);
                     }}
-                  >
-                    <input
-                      type="text"
-                      value={t.title}
-                      onChange={(e) => {
-                        const newTasks = [...suggestedTasks];
-                        newTasks[idx].title = e.target.value;
-                        setSuggestedTasks(newTasks);
-                      }}
-                      style={{
-                        width: "100%",
-                        background: "transparent",
-                        border: "none",
-                        borderBottom: "1px solid rgba(255,255,255,0.2)",
-                        color: "var(--text-primary)",
-                        marginBottom: "8px",
-                        paddingBottom: "4px",
-                      }}
-                    />
-                    <div style={{ display: "flex", gap: "8px" }}>
-                      <input
-                        type="text"
-                        value={t.estimated_time}
-                        onChange={(e) => {
-                          const newTasks = [...suggestedTasks];
-                          newTasks[idx].estimated_time = e.target.value;
-                          setSuggestedTasks(newTasks);
-                        }}
-                        style={{
-                          flex: 1,
-                          background: "rgba(0,0,0,0.2)",
-                          border: "none",
-                          borderRadius: "4px",
-                          padding: "4px 8px",
-                          color: "var(--accent-cyan)",
-                          fontSize: "0.85rem",
-                        }}
-                      />
-                      <button
-                        onClick={() => {
-                          const newTasks = [...suggestedTasks];
-                          newTasks.splice(idx, 1);
-                          setSuggestedTasks(newTasks);
-                        }}
-                        style={{
-                          background: "rgba(239, 68, 68, 0.2)",
-                          color: "#ef4444",
-                          border: "none",
-                          borderRadius: "4px",
-                          padding: "4px 8px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    className="bg-transparent text-xs text-slate-200 w-full focus:outline-none"
+                  />
+                </div>
+              ))}
+            </div>
 
+            <div className="flex gap-3 pt-2">
               <button
-                onClick={() =>
-                  setSuggestedTasks([
-                    ...suggestedTasks,
-                    {
-                      title: "New Task",
-                      estimated_time: "Anytime",
-                      description: "",
-                      energy_required: "medium",
-                    },
-                  ])
-                }
-                style={{
-                  background: "transparent",
-                  border: "1px dashed var(--accent-purple)",
-                  color: "var(--accent-purple)",
-                  padding: "8px",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                }}
+                onClick={() => setShowPlanModal(false)}
+                className="flex-1 py-2.5 rounded-xl border border-slate-800 text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
               >
-                + Add Custom Task
+                Cancel
               </button>
-
-              <div style={{ display: "flex", gap: "12px", marginTop: "12px" }}>
-                <button
-                  onClick={() => setShowPlanModal(false)}
-                  style={{
-                    flex: 1,
-                    padding: "10px",
-                    background: "rgba(255,255,255,0.1)",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "8px",
-                    cursor: "pointer",
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSavePlan}
-                  style={{
-                    flex: 1,
-                    padding: "10px",
-                    background: "var(--accent-purple)",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "8px",
-                    cursor: "pointer",
-                  }}
-                >
-                  {loadingPlan ? "Saving..." : "Save to To-Do List"}
-                </button>
-              </div>
+              <button
+                onClick={handleSavePlan}
+                className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white shadow-lg shadow-indigo-600/30 transition-colors"
+              >
+                Save To Schedule
+              </button>
             </div>
           </div>
-        )}
-
-        {/* Bottom Navigation */}
-        <motion.nav
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.5 }}
-          className="bottom-nav"
-          style={{
-            position: "fixed",
-            bottom: "24px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            display: "flex",
-            alignItems: "center",
-            gap: "32px",
-            background: "var(--bg-panel)",
-            padding: "8px 32px",
-            borderRadius: "40px",
-            backdropFilter: "blur(20px)",
-            border: "1px solid var(--border-glass)",
-            zIndex: 10,
-          }}
-        >
-          <div className="nav-item active">
-            <Home size={20} /> Home
-          </div>
-          <div className="nav-item" onClick={() => window.location.href = '/workout'} style={{cursor: 'pointer'}}>
-            <Activity size={20} /> Workout
-          </div>
-
-          <div style={{ position: "relative", top: "-16px", transform: "translateY(-4px)" }}>
-            <div className="nav-orb">
-              <Sparkles size={22} color="white" />
-            </div>
-          </div>
-
-          <div className="nav-item">
-            <Book size={20} /> Journal
-          </div>
-          <div className="nav-item">
-            <Settings size={20} /> Settings
-          </div>
-        </motion.nav>
-      </div>
-    </>
+        </div>
+      )}
+    </div>
   );
 };
 
