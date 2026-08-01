@@ -9,6 +9,7 @@ try {
   redisClient = new Redis({
     host: redisHost,
     port: redisPort,
+    password: process.env.REDIS_PASSWORD || undefined,
     lazyConnect: true,
     retryStrategy(times) {
       if (times > 3) {
