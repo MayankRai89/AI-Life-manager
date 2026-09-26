@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes.js";
+import { errorHandler } from "./middleware/errorHandler.middleware.js";
 
 const app = express();
 
@@ -35,21 +36,15 @@ app.get("/api/health", (req, res) => {
 // Authentication Routes
 app.use("/api/auth", authRoutes);
 
-// 404 Handler
+// 404 Route Handler
 app.use((req, res, next) => {
   res.status(404).json({
-    status: "error",
+    status: "fail",
     message: `Route ${req.originalUrl} not found`,
   });
 });
 
-// Global Error Handler
-app.use((err, req, res, next) => {
-  console.error("Unhandled Server Error:", err);
-  res.status(err.status || 500).json({
-    status: "error",
-    message: err.message || "Internal Server Error",
-  });
-});
+// Centralized Global Error Handler
+app.use(errorHandler);
 
 export default app;
