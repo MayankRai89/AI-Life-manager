@@ -1,6 +1,5 @@
-import Task from "../model/task.model.js";
+import * as taskService from "../services/task.service.js";
 import asyncHandler from "../utils/asyncHandler.js";
-import { AppError } from "../middleware/errorHandler.middleware.js";
 
 /**
  * @desc    Get all tasks for authenticated user (with filters & search)
@@ -8,56 +7,14 @@ import { AppError } from "../middleware/errorHandler.middleware.js";
  * @access  Private
  */
 export const getTasks = asyncHandler(async (req, res) => {
-  const {
-    category,
-    priority,
-    status,
-    search,
-    sortBy = "createdAt",
-    order = "desc",
-    page = 1,
-    limit = 20,
-  } = req.query;
-
-  const query = { userId: req.user._id };
-
-  if (category) query.category = category.toLowerCase();
-  if (priority) query.priority = priority.toLowerCase();
-  if (status) query.status = status.toLowerCase();
-
-  // Keyword search in title & description
-  if (search) {
-    query.$or = [
-      { title: { $regex: search, $options: "i" } },
-      { description: { $regex: search, $options: "i" } },
-      { tags: { $in: [new RegExp(search, "i")] } },
-    ];
-  }
-
-  const pageNum = parseInt(page, 10) || 1;
-  const limitNum = parseInt(limit, 10) || 20;
-  const skip = (pageNum - 1) * limitNum;
-  const sortOrder = order === "asc" ? 1 : -1;
-
-  const [tasks, totalTasks] = await Promise.all([
-    Task.find(query)
-      .sort({ [sortBy]: sortOrder })
-      .skip(skip)
-      .limit(limitNum),
-    Task.countDocuments(query),
-  ]);
+  const result = await taskService.getTasks(req.user._id, req.query);
 
   res.status(200).json({
     status: "success",
-    results: tasks.length,
-    pagination: {
-      page: pageNum,
-      limit: limitNum,
-      totalPages: Math.ceil(totalTasks / limitNum),
-      totalTasks,
-    },
+    results: result.tasks.length,
+    pagination: result.pagination,
     data: {
-      tasks,
+      tasks: result.tasks,
     },
   });
 });
@@ -68,14 +25,7 @@ export const getTasks = asyncHandler(async (req, res) => {
  * @access  Private
  */
 export const getTaskById = asyncHandler(async (req, res) => {
-  const task = await Task.findOne({
-    _id: req.params.id,
-    userId: req.user._id,
-  });
-
-  if (!task) {
-    throw new AppError("Task not found", 404);
-  }
+  const task = await taskService.getTaskById(req.user._id, req.params.id);
 
   res.status(200).json({
     status: "success",
@@ -91,12 +41,7 @@ export const getTaskById = asyncHandler(async (req, res) => {
  * @access  Private
  */
 export const createTask = asyncHandler(async (req, res) => {
-  const taskData = {
-    ...req.body,
-    userId: req.user._id,
-  };
-
-  const newTask = await Task.create(taskData);
+  const newTask = await taskService.createTask(req.user._id, req.body);
 
   res.status(201).json({
     status: "success",
@@ -113,21 +58,17 @@ export const createTask = asyncHandler(async (req, res) => {
  * @access  Private
  */
 export const updateTask = asyncHandler(async (req, res) => {
-  const task = await Task.findOneAndUpdate(
-    { _id: req.params.id, userId: req.user._id },
-    req.body,
-    { new: true, runValidators: true }
+  const updatedTask = await taskService.updateTask(
+    req.user._id,
+    req.params.id,
+    req.body
   );
-
-  if (!task) {
-    throw new AppError("Task not found", 404);
-  }
 
   res.status(200).json({
     status: "success",
     message: "Task updated successfully",
     data: {
-      task,
+      task: updatedTask,
     },
   });
 });
@@ -138,27 +79,15 @@ export const updateTask = asyncHandler(async (req, res) => {
  * @access  Private
  */
 export const updateTaskStatus = asyncHandler(async (req, res) => {
-  const { status } = req.body;
-
-  if (!status) {
-    throw new AppError("Please provide a valid status", 400);
-  }
-
-  const task = await Task.findOne({
-    _id: req.params.id,
-    userId: req.user._id,
-  });
-
-  if (!task) {
-    throw new AppError("Task not found", 404);
-  }
-
-  task.status = status;
-  await task.save();
+  const task = await taskService.updateTaskStatus(
+    req.user._id,
+    req.params.id,
+    req.body.status
+  );
 
   res.status(200).json({
     status: "success",
-    message: `Task marked as ${status}`,
+    message: `Task marked as ${req.body.status}`,
     data: {
       task,
     },
@@ -171,14 +100,7 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
  * @access  Private
  */
 export const deleteTask = asyncHandler(async (req, res) => {
-  const task = await Task.findOneAndDelete({
-    _id: req.params.id,
-    userId: req.user._id,
-  });
-
-  if (!task) {
-    throw new AppError("Task not found", 404);
-  }
+  await taskService.deleteTask(req.user._id, req.params.id);
 
   res.status(200).json({
     status: "success",
@@ -187,40 +109,12 @@ export const deleteTask = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Get user's task statistics (completed, pending, overdue, priority breakdown)
+ * @desc    Get user's task statistics
  * @route   GET /api/tasks/stats
  * @access  Private
  */
 export const getTaskStats = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
-
-  const [statusCounts, priorityCounts, overdueCount] = await Promise.all([
-    Task.aggregate([
-      { $match: { userId } },
-      { $group: { _id: "$status", count: { $sum: 1 } } },
-    ]),
-    Task.aggregate([
-      { $match: { userId } },
-      { $group: { _id: "$priority", count: { $sum: 1 } } },
-    ]),
-    Task.countDocuments({
-      userId,
-      status: { $nin: ["completed", "archived", "cancelled"] },
-      dueDate: { $lt: new Date() },
-    }),
-  ]);
-
-  const stats = {
-    byStatus: statusCounts.reduce(
-      (acc, cur) => ({ ...acc, [cur._id]: cur.count }),
-      {}
-    ),
-    byPriority: priorityCounts.reduce(
-      (acc, cur) => ({ ...acc, [cur._id]: cur.count }),
-      {}
-    ),
-    overdue: overdueCount,
-  };
+  const stats = await taskService.getTaskStats(req.user._id);
 
   res.status(200).json({
     status: "success",
