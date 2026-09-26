@@ -3,6 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes.js";
 import taskRoutes from "./routes/task.routes.js";
+import moodRoutes from "./routes/mood.routes.js";
 import { errorHandler } from "./middleware/errorHandler.middleware.js";
 import logger from "./utils/Logger.js";
 
@@ -39,6 +40,7 @@ app.get("/api/health", (req, res) => {
 // Feature Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);
+app.use("/api/moods", moodRoutes);
 
 // 404 Route Handler
 app.use((req, res, next) => {
