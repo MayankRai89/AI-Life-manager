@@ -1,6 +1,3 @@
-/**
- * Custom operational error class
- */
 export class AppError extends Error {
   constructor(message, statusCode = 500) {
     super(message);
@@ -11,18 +8,11 @@ export class AppError extends Error {
     Error.captureStackTrace(this, this.constructor);
   }
 }
-
-/**
- * Handle Mongoose CastError (e.g., invalid ObjectId)
- */
 const handleCastErrorDB = (err) => {
   const message = `Invalid ${err.path}: ${err.value}`;
   return new AppError(message, 400);
 };
 
-/**
- * Handle Mongoose duplicate key error (code 11000)
- */
 const handleDuplicateFieldsDB = (err) => {
   const field = Object.keys(err.keyPattern || err.keyValue || {})[0] || "field";
   const value = err.keyValue ? err.keyValue[field] : "";
@@ -30,24 +20,15 @@ const handleDuplicateFieldsDB = (err) => {
   return new AppError(message, 409);
 };
 
-/**
- * Handle Mongoose schema validation errors
- */
 const handleValidationErrorDB = (err) => {
   const errors = Object.values(err.errors).map((el) => el.message);
   const message = `Invalid input: ${errors.join(". ")}`;
   return new AppError(message, 400);
 };
 
-/**
- * Handle JWT invalid signature
- */
 const handleJWTError = () =>
   new AppError("Invalid token. Please log in again.", 401);
 
-/**
- * Handle JWT expired token
- */
 const handleJWTExpiredError = () =>
   new AppError("Your token has expired. Please log in again.", 401);
 
