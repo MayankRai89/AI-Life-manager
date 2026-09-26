@@ -1,12 +1,11 @@
 import { generateToken } from "../services/auth.services.js";
 import User from "../model/user.model.js";
 
-// Cookie options for secure httpOnly authentication
 const getCookieOptions = () => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+  maxAge: 7 * 24 * 60 * 60 * 1000,
 });
 
 /**
@@ -29,15 +28,13 @@ export const register = async (req, res) => {
       medicalReport,
     } = req.body;
 
-    // Required fields check
     if (!username || !name || !email || !password) {
       return res.status(400).json({
         status: "error",
-        message: "Please provide all required fields: username, name, email, and password.",
+        message:
+          "Please provide all required fields: username, name, email, and password.",
       });
     }
-
-    // Check if user already exists with username or email
     const existingUser = await User.findOne({
       $or: [
         { email: email.toLowerCase() },
@@ -59,8 +56,6 @@ export const register = async (req, res) => {
         });
       }
     }
-
-    // Create new user
     const newUser = await User.create({
       username,
       name,
@@ -76,10 +71,8 @@ export const register = async (req, res) => {
 
     const token = generateToken(newUser._id);
 
-    // Set HTTP-Only Cookie
     res.cookie("token", token, getCookieOptions());
 
-    // Prepare user response without password
     const userResponse = newUser.toObject();
     delete userResponse.password;
 
@@ -92,7 +85,6 @@ export const register = async (req, res) => {
       },
     });
   } catch (error) {
-    // Handle Mongoose validation errors
     if (error.name === "ValidationError") {
       const messages = Object.values(error.errors).map((err) => err.message);
       return res.status(400).json({
@@ -101,7 +93,6 @@ export const register = async (req, res) => {
       });
     }
 
-    // Handle Mongo duplicate key error
     if (error.code === 11000) {
       const duplicateField = Object.keys(error.keyPattern || {})[0] || "field";
       return res.status(409).json({
@@ -127,7 +118,6 @@ export const login = async (req, res) => {
   try {
     const { identifier, username, email, password } = req.body;
 
-    // Login identifier can be passed as `identifier`, `username`, or `email`
     const loginIdentifier = identifier || username || email;
 
     if (!loginIdentifier || !password) {
@@ -139,12 +129,8 @@ export const login = async (req, res) => {
 
     const trimmedIdentifier = loginIdentifier.trim().toLowerCase();
 
-    // Query user by email OR username (case-insensitive) & explicitly select password
     const user = await User.findOne({
-      $or: [
-        { email: trimmedIdentifier },
-        { username: trimmedIdentifier },
-      ],
+      $or: [{ email: trimmedIdentifier }, { username: trimmedIdentifier }],
     }).select("+password");
 
     if (!user) {
@@ -154,7 +140,6 @@ export const login = async (req, res) => {
       });
     }
 
-    // Verify password
     const isPasswordMatch = await user.comparePassword(password);
     if (!isPasswordMatch) {
       return res.status(401).json({
@@ -164,11 +149,8 @@ export const login = async (req, res) => {
     }
 
     const token = generateToken(user._id);
-
-    // Set HTTP-Only Cookie
     res.cookie("token", token, getCookieOptions());
 
-    // Convert user doc to object and omit password
     const userResponse = user.toObject();
     delete userResponse.password;
 
