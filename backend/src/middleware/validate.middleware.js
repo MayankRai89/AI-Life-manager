@@ -30,7 +30,6 @@ export const validate = (validations) => {
   };
 };
 
-
 export const registerValidationRules = [
   body("username")
     .trim()
@@ -112,7 +111,6 @@ export const registerValidationRules = [
     .withMessage("Medical report must be an object"),
 ];
 
-
 export const loginValidationRules = [
   body("identifier")
     .optional()
@@ -144,9 +142,75 @@ export const loginValidationRules = [
     .withMessage("Password is required"),
 ];
 
+export const createTaskValidationRules = [
+  body("title")
+    .trim()
+    .notEmpty()
+    .withMessage("Task title is required")
+    .isLength({ max: 200 })
+    .withMessage("Task title cannot exceed 200 characters"),
+
+  body("category")
+    .optional()
+    .isIn(["work", "personal", "health", "fitness", "study", "errand", "finance", "other"])
+    .withMessage("Invalid task category"),
+
+  body("priority")
+    .optional()
+    .isIn(["low", "medium", "high", "urgent"])
+    .withMessage("Invalid priority level"),
+
+  body("status")
+    .optional()
+    .isIn(["pending", "in_progress", "completed", "archived", "cancelled"])
+    .withMessage("Invalid task status"),
+
+  body("dueDate")
+    .optional({ values: "falsy" })
+    .isISO8601()
+    .withMessage("Due date must be a valid ISO8601 date"),
+
+  body("estimatedDuration")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("Estimated duration must be at least 1 minute"),
+];
+
+export const updateTaskValidationRules = [
+  body("title")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("Task title cannot be empty")
+    .isLength({ max: 200 })
+    .withMessage("Task title cannot exceed 200 characters"),
+
+  body("category")
+    .optional()
+    .isIn(["work", "personal", "health", "fitness", "study", "errand", "finance", "other"])
+    .withMessage("Invalid task category"),
+
+  body("priority")
+    .optional()
+    .isIn(["low", "medium", "high", "urgent"])
+    .withMessage("Invalid priority level"),
+
+  body("status")
+    .optional()
+    .isIn(["pending", "in_progress", "completed", "archived", "cancelled"])
+    .withMessage("Invalid task status"),
+
+  body("dueDate")
+    .optional({ values: "falsy" })
+    .isISO8601()
+    .withMessage("Due date must be a valid ISO8601 date"),
+];
+
 export default {
   handleValidationErrors,
   validate,
   registerValidationRules,
   loginValidationRules,
+  createTaskValidationRules,
+  updateTaskValidationRules,
 };

@@ -1,9 +1,6 @@
 import { verifyToken } from "../services/auth.services.js";
 import User from "../model/user.model.js";
 
-/**
- * Protect routes - verifies Bearer token in headers or cookies
- */
 export const protect = async (req, res, next) => {
   let token;
 
