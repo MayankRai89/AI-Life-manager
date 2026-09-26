@@ -1,6 +1,7 @@
 import "dotenv/config";
 import app from "./src/app.js";
 import { connectDB } from "./src/config/mongodb.js";
+import logger from "./src/utils/Logger.js";
 
 const PORT = process.env.PORT || 3000;
 
@@ -8,19 +9,19 @@ const PORT = process.env.PORT || 3000;
 connectDB();
 
 const server = app.listen(PORT, () => {
-  console.log(`🚀 Server running on PORT : ${PORT}`);
+  logger.info(`Server running on PORT: ${PORT}`);
 });
 
 // Handle graceful shutdown
 process.on("SIGINT", () => {
-  console.log("\nShutting down gracefully...");
+  logger.warn("Shutting down server gracefully...");
   server.close(() => {
-    console.log("Server closed.");
+    logger.info("Server closed.");
     process.exit(0);
   });
 });
 
 process.on("unhandledRejection", (err) => {
-  console.error("Unhandled Rejection:", err);
+  logger.error(`Unhandled Rejection: ${err.message}`, err);
   server.close(() => process.exit(1));
 });

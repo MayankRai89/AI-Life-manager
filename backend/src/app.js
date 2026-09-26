@@ -3,6 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes.js";
 import { errorHandler } from "./middleware/errorHandler.middleware.js";
+import logger from "./utils/Logger.js";
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(logger.httpMiddleware);
 
 // Base & Health Routes
 app.get("/", (req, res) => {
