@@ -7,6 +7,9 @@ import {
   quickChatPrompt,
 } from "./promptTemplet.js";
 
+/** Per-provider fetch timeout — prevents one slow provider from blocking Promise.all */
+const PROVIDER_TIMEOUT_MS = 10000;
+
 /**
  * ============================================================
  * AI PROVIDER ADAPTERS
@@ -21,18 +24,24 @@ import {
  */
 const callGemini = async (prompt, temperature = 0.7, maxTokens = 1024) => {
   const start = Date.now();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), PROVIDER_TIMEOUT_MS);
   try {
-    const apiKey = process.env.GEMNI_API;
+    const apiKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || process.env.GEMNI_API;
     if (!apiKey) throw new Error("Gemini API key not configured");
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`,
       {
         method: "POST",
+        signal: controller.signal,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature, maxOutputTokens: maxTokens },
+          generationConfig: {
+            temperature,
+            maxOutputTokens: Math.max(maxTokens, 512), // ensure minimum 512 tokens
+          },
         }),
       }
     );
@@ -49,13 +58,11 @@ const callGemini = async (prompt, temperature = 0.7, maxTokens = 1024) => {
       error: null,
     };
   } catch (err) {
-    logger.warn(`[AI] Gemini failed: ${err.message}`);
-    return {
-      provider: "gemini",
-      text: null,
-      duration: Date.now() - start,
-      error: err.message,
-    };
+    const msg = err.name === "AbortError" ? `Gemini timeout (>${PROVIDER_TIMEOUT_MS}ms)` : err.message;
+    logger.warn(`[AI] Gemini failed: ${msg}`);
+    return { provider: "gemini", text: null, duration: Date.now() - start, error: msg };
+  } finally {
+    clearTimeout(timer);
   }
 };
 
@@ -64,12 +71,15 @@ const callGemini = async (prompt, temperature = 0.7, maxTokens = 1024) => {
  */
 const callMistral = async (prompt, temperature = 0.7, maxTokens = 1024) => {
   const start = Date.now();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), PROVIDER_TIMEOUT_MS);
   try {
     const apiKey = process.env.MISTRALAI_API_KEY;
     if (!apiKey) throw new Error("Mistral API key not configured");
 
     const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
       method: "POST",
+      signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
@@ -84,25 +94,16 @@ const callMistral = async (prompt, temperature = 0.7, maxTokens = 1024) => {
 
     const data = await response.json();
     if (!response.ok)
-      throw new Error(
-        data?.message || data?.error?.message || "Mistral API error"
-      );
+      throw new Error(data?.message || data?.error?.message || "Mistral API error");
 
     const text = data?.choices?.[0]?.message?.content || "";
-    return {
-      provider: "mistral",
-      text: text.trim(),
-      duration: Date.now() - start,
-      error: null,
-    };
+    return { provider: "mistral", text: text.trim(), duration: Date.now() - start, error: null };
   } catch (err) {
-    logger.warn(`[AI] Mistral failed: ${err.message}`);
-    return {
-      provider: "mistral",
-      text: null,
-      duration: Date.now() - start,
-      error: err.message,
-    };
+    const msg = err.name === "AbortError" ? `Mistral timeout (>${PROVIDER_TIMEOUT_MS}ms)` : err.message;
+    logger.warn(`[AI] Mistral failed: ${msg}`);
+    return { provider: "mistral", text: null, duration: Date.now() - start, error: msg };
+  } finally {
+    clearTimeout(timer);
   }
 };
 
@@ -111,19 +112,22 @@ const callMistral = async (prompt, temperature = 0.7, maxTokens = 1024) => {
  */
 const callCohere = async (prompt, temperature = 0.7, maxTokens = 1024) => {
   const start = Date.now();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), PROVIDER_TIMEOUT_MS);
   try {
     const apiKey = process.env.COHERE_API_KEY;
     if (!apiKey) throw new Error("Cohere API key not configured");
 
     const response = await fetch("https://api.cohere.com/v2/chat", {
       method: "POST",
+      signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
         "X-Client-Name": "ai-life-manager",
       },
       body: JSON.stringify({
-        model: "command-r-plus",
+        model: "command-a-03-2025",
         messages: [{ role: "user", content: prompt }],
         temperature,
         max_tokens: maxTokens,
@@ -134,20 +138,13 @@ const callCohere = async (prompt, temperature = 0.7, maxTokens = 1024) => {
     if (!response.ok) throw new Error(data?.message || "Cohere API error");
 
     const text = data?.message?.content?.[0]?.text || "";
-    return {
-      provider: "cohere",
-      text: text.trim(),
-      duration: Date.now() - start,
-      error: null,
-    };
+    return { provider: "cohere", text: text.trim(), duration: Date.now() - start, error: null };
   } catch (err) {
-    logger.warn(`[AI] Cohere failed: ${err.message}`);
-    return {
-      provider: "cohere",
-      text: null,
-      duration: Date.now() - start,
-      error: err.message,
-    };
+    const msg = err.name === "AbortError" ? `Cohere timeout (>${PROVIDER_TIMEOUT_MS}ms)` : err.message;
+    logger.warn(`[AI] Cohere failed: ${msg}`);
+    return { provider: "cohere", text: null, duration: Date.now() - start, error: msg };
+  } finally {
+    clearTimeout(timer);
   }
 };
 

@@ -30,7 +30,15 @@ export const getTasks = async (userId, options = {}) => {
 
   if (category) query.category = category.toLowerCase();
   if (priority) query.priority = priority.toLowerCase();
-  if (status) query.status = status.toLowerCase();
+  if (status) {
+    if (Array.isArray(status)) {
+      query.status = { $in: status.map((s) => s.toLowerCase()) };
+    } else if (typeof status === "object") {
+      query.status = status;
+    } else {
+      query.status = status.toLowerCase();
+    }
+  }
 
   // Search in title, description, or tags
   if (search) {

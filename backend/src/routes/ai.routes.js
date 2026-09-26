@@ -43,15 +43,14 @@ router.get("/prioritize-tasks", getPrioritizedTasks);
  */
 router.post(
   "/chat",
-  [
+  validate([
     body("message")
       .trim()
       .notEmpty()
       .withMessage("Message is required")
       .isLength({ min: 2, max: 2000 })
       .withMessage("Message must be between 2 and 2000 characters"),
-  ],
-  validate,
+  ]),
   chat
 );
 

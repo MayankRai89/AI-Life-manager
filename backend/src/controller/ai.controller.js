@@ -23,7 +23,7 @@ export const getDailySuggestion = asyncHandler(async (req, res) => {
 
   // Fetch pending/in-progress tasks
   const { tasks } = await taskService.getTasks(user._id, {
-    status: "pending",
+    status: ["pending", "in_progress"],
     limit: 10,
   });
 
@@ -100,12 +100,12 @@ export const getPrioritizedTasks = asyncHandler(async (req, res) => {
   }
 
   const { tasks } = await taskService.getTasks(user._id, {
-    status: "pending",
+    status: ["pending", "in_progress"],
     limit: 10,
   });
 
   if (!tasks.length) {
-    throw new AppError("No pending tasks found to prioritize.", 400);
+    throw new AppError("No pending or in-progress tasks found to prioritize.", 400);
   }
 
   const result = await aiService.prioritizeTasks({
