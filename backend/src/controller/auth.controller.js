@@ -1,17 +1,13 @@
-import jwt from "jsonwebtoken";
+import { generateToken } from "../services/auth.services.js";
 import User from "../model/user.model.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "ai_life_manager_secret_key_2026";
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
-
-/**
- * Generate JWT token for user
- */
-const generateToken = (userId) => {
-  return jwt.sign({ id: userId }, JWT_SECRET, {
-    expiresIn: JWT_EXPIRES_IN,
-  });
-};
+// Cookie options for secure httpOnly authentication
+const getCookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+});
 
 /**
  * @desc    Register a new user
@@ -79,6 +75,9 @@ export const register = async (req, res) => {
     });
 
     const token = generateToken(newUser._id);
+
+    // Set HTTP-Only Cookie
+    res.cookie("token", token, getCookieOptions());
 
     // Prepare user response without password
     const userResponse = newUser.toObject();
@@ -166,6 +165,9 @@ export const login = async (req, res) => {
 
     const token = generateToken(user._id);
 
+    // Set HTTP-Only Cookie
+    res.cookie("token", token, getCookieOptions());
+
     // Convert user doc to object and omit password
     const userResponse = user.toObject();
     delete userResponse.password;
@@ -183,6 +185,32 @@ export const login = async (req, res) => {
     return res.status(500).json({
       status: "error",
       message: "An error occurred during login. Please try again later.",
+    });
+  }
+};
+
+/**
+ * @desc    Logout user and clear cookie
+ * @route   POST /api/auth/logout
+ * @access  Public
+ */
+export const logout = async (req, res) => {
+  try {
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Logged out successfully",
+    });
+  } catch (error) {
+    console.error("Logout Error:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Error during logout",
     });
   }
 };

@@ -1,7 +1,5 @@
-import jwt from "jsonwebtoken";
+import { verifyToken } from "../services/auth.services.js";
 import User from "../model/user.model.js";
-
-const JWT_SECRET = process.env.JWT_SECRET;
 
 /**
  * Protect routes - verifies Bearer token in headers or cookies
@@ -26,7 +24,7 @@ export const protect = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = verifyToken(token);
     const user = await User.findById(decoded.id);
 
     if (!user) {
