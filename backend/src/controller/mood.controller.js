@@ -109,7 +109,9 @@ export const getMoodCheckIns = asyncHandler(async (req, res) => {
  * @access  Private
  */
 export const getLatestMoodCheckIn = asyncHandler(async (req, res) => {
-  const latestCheckIn = await MoodCheckIn.findOne({ userId: req.user._id }).sort({
+  const latestCheckIn = await MoodCheckIn.findOne({
+    userId: req.user._id,
+  }).sort({
     checkInTime: -1,
   });
 
@@ -153,7 +155,7 @@ export const updateMoodCheckIn = asyncHandler(async (req, res) => {
   const updatedCheckIn = await MoodCheckIn.findOneAndUpdate(
     { _id: req.params.id, userId: req.user._id },
     req.body,
-    { new: true, runValidators: true }
+    { new: true, runValidators: true },
   );
 
   if (!updatedCheckIn) {
@@ -205,7 +207,6 @@ export const getMoodAnalytics = asyncHandler(async (req, res) => {
 
   const [averages, moodDistribution, commonTriggers, dailyTrends] =
     await Promise.all([
-      // 1. Overall Averages
       MoodCheckIn.aggregate([
         { $match: { userId, checkInTime: { $gte: startDate } } },
         {
@@ -219,14 +220,12 @@ export const getMoodAnalytics = asyncHandler(async (req, res) => {
         },
       ]),
 
-      // 2. Mood Type Breakdown
       MoodCheckIn.aggregate([
         { $match: { userId, checkInTime: { $gte: startDate } } },
         { $group: { _id: "$mood", count: { $sum: 1 } } },
         { $sort: { count: -1 } },
       ]),
 
-      // 3. Top Triggers Breakdown
       MoodCheckIn.aggregate([
         { $match: { userId, checkInTime: { $gte: startDate } } },
         { $unwind: "$triggers" },
@@ -235,7 +234,6 @@ export const getMoodAnalytics = asyncHandler(async (req, res) => {
         { $limit: 5 },
       ]),
 
-      // 4. Daily Trends for charts
       MoodCheckIn.aggregate([
         { $match: { userId, checkInTime: { $gte: startDate } } },
         {
@@ -272,7 +270,7 @@ export const getMoodAnalytics = asyncHandler(async (req, res) => {
       },
       moodDistribution: moodDistribution.reduce(
         (acc, item) => ({ ...acc, [item._id]: item.count }),
-        {}
+        {},
       ),
       topTriggers: commonTriggers.map((item) => ({
         trigger: item._id,
