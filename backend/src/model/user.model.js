@@ -40,7 +40,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Password is required"],
       minlength: [6, "Password must be at least 6 characters long"],
-      select: false, // Don't return password by default in queries
+      select: false,
     },
     phoneNumber: {
       type: String,
@@ -69,28 +69,28 @@ const userSchema = new mongoose.Schema(
       default: "UTC",
       trim: true,
     },
-    // Daily schedule / working hours / sleep-wake routine
+
     schedule: {
       wakeTime: {
-        type: String, // e.g. "07:00"
+        type: String,
         default: "07:00",
       },
       sleepTime: {
-        type: String, // e.g. "23:00"
+        type: String,
         default: "23:00",
       },
       workingHours: {
         start: {
-          type: String, // e.g. "09:00"
+          type: String,
           default: "09:00",
         },
         end: {
-          type: String, // e.g. "18:00"
+          type: String,
           default: "18:00",
         },
       },
     },
-    // Medical report details (if any)
+
     medicalReport: {
       conditions: [{ type: String, trim: true }],
       allergies: [{ type: String, trim: true }],
@@ -110,14 +110,12 @@ const userSchema = new mongoose.Schema(
   },
 );
 
-// Hash password before saving if modified
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 });
 
-// Helper method to compare password during login
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
