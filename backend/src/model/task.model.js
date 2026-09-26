@@ -68,7 +68,13 @@ const taskSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: {
-        values: ["pending", "in_progress", "completed", "archived", "cancelled"],
+        values: [
+          "pending",
+          "in_progress",
+          "completed",
+          "archived",
+          "cancelled",
+        ],
         message: "{VALUE} is not a valid task status",
       },
       default: "pending",
@@ -80,23 +86,19 @@ const taskSchema = new mongoose.Schema(
       index: true,
     },
     dueTime: {
-      type: String, // e.g., "14:30"
+      type: String,
       trim: true,
     },
-    // Estimated time in minutes
     estimatedDuration: {
       type: Number,
       min: [1, "Estimated duration must be at least 1 minute"],
     },
-    // Actual time spent in minutes
     actualDuration: {
       type: Number,
       min: [0, "Actual duration cannot be negative"],
       default: 0,
     },
-    // Subtasks / checklist items
     subtasks: [subtaskSchema],
-    // Recurrence rules
     recurrence: {
       isRecurring: {
         type: Boolean,
@@ -120,7 +122,6 @@ const taskSchema = new mongoose.Schema(
         type: Date,
       },
     },
-    // Reminders (e.g., minutes before due date)
     reminders: [
       {
         minutesBefore: Number,
@@ -128,7 +129,6 @@ const taskSchema = new mongoose.Schema(
         isSent: { type: Boolean, default: false },
       },
     ],
-    // Tags for filtering
     tags: [
       {
         type: String,
@@ -136,7 +136,6 @@ const taskSchema = new mongoose.Schema(
         lowercase: true,
       },
     ],
-    // AI Features & smart scheduling
     aiMetadata: {
       isAiSuggested: {
         type: Boolean,
@@ -152,8 +151,8 @@ const taskSchema = new mongoose.Schema(
         default: "medium_energy",
       },
       optimalTimeSlot: {
-        start: String, // e.g. "09:00"
-        end: String, // e.g. "10:30"
+        start: String,
+        end: String,
       },
     },
     completedAt: {
@@ -162,10 +161,9 @@ const taskSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
-// Auto set completedAt timestamp when status changes to completed
 taskSchema.pre("save", function () {
   if (this.isModified("status")) {
     if (this.status === "completed" && !this.completedAt) {
@@ -176,7 +174,6 @@ taskSchema.pre("save", function () {
   }
 });
 
-// Compound indexes for optimal query performance
 taskSchema.index({ userId: 1, status: 1, dueDate: 1 });
 taskSchema.index({ userId: 1, priority: 1 });
 taskSchema.index({ userId: 1, category: 1 });
