@@ -1,8 +1,8 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN;
+const JWT_SECRET = process.env.JWT_SECRET || "ai_life_manager_secret_key_2026";
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 const SALT_ROUNDS = 10;
 
 /**
@@ -38,9 +38,27 @@ export const comparePassword = async (candidatePassword, hashedPassword) => {
  * @returns {string} - Signed JWT token
  */
 export const generateToken = (payload, expiresIn = JWT_EXPIRES_IN) => {
-  const tokenPayload = typeof payload === "object" ? payload : { id: payload };
+  let tokenPayload;
+
+  // Handle Mongoose ObjectId or string / primitive IDs
+  if (
+    typeof payload === "string" ||
+    typeof payload === "number" ||
+    (payload && payload.constructor && payload.constructor.name === "ObjectId")
+  ) {
+    tokenPayload = { id: payload.toString() };
+  } else if (payload && typeof payload === "object" && !(payload instanceof Buffer)) {
+    // If it's already an object (e.g. { id: user._id }), ensure id is stringified if ObjectId
+    tokenPayload = { ...payload };
+    if (tokenPayload.id && typeof tokenPayload.id !== "string") {
+      tokenPayload.id = tokenPayload.id.toString();
+    }
+  } else {
+    tokenPayload = { id: String(payload) };
+  }
+
   return jwt.sign(tokenPayload, JWT_SECRET, {
-    expiresIn,
+    expiresIn: expiresIn || "7d",
   });
 };
 
