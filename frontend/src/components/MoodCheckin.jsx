@@ -7,6 +7,7 @@ import {
 import { fetchAIDayPlan, fetchAIPrioritizedTasks } from "../redux/slices/aiSlice";
 import { PRESET_MOODS } from "../mock/mockData";
 import { Button } from "./ui/Button";
+import { VoiceInputButton } from "./VoiceInputButton";
 import { Sparkles, Check, ChevronDown, ChevronUp, Smile, BatteryMedium, ShieldAlert } from "lucide-react";
 
 export function MoodCheckin() {
@@ -188,9 +189,16 @@ export function MoodCheckin() {
 
             {/* Note input */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-600">
-                Brief reflection (optional)
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-slate-600">
+                  Brief reflection (optional)
+                </label>
+                <VoiceInputButton
+                  onResult={(transcription) => {
+                    setNote((prev) => (prev ? `${prev} ${transcription}` : transcription));
+                  }}
+                />
+              </div>
               <input
                 type="text"
                 value={note}

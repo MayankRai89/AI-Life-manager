@@ -13,6 +13,7 @@ import { Badge } from "./ui/Badge";
 import { Input } from "./ui/Input";
 import { Modal } from "./ui/Modal";
 import { TaskPriorityBadge } from "./TaskPriorityBadge";
+import { VoiceInputButton } from "./VoiceInputButton";
 import {
   CheckCircle2,
   Circle,
@@ -365,18 +366,38 @@ export function TaskList({ showHeader = true, maxItems = null }) {
         title={editingTask ? "Edit Action Item" : "Create New Action Item"}
       >
         <form onSubmit={handleSaveTask} className="space-y-4">
-          <Input
-            label="Task Title *"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Conduct user feedback session"
-            required
-          />
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Task Title *
+              </label>
+              <VoiceInputButton
+                onResult={(transcription) => {
+                  setTitle((prev) => (prev ? `${prev} ${transcription}` : transcription));
+                }}
+              />
+            </div>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Conduct user feedback session"
+              required
+              className="w-full rounded-xl border border-slate-200 bg-white/80 p-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+            />
+          </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Description (Optional)
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Description (Optional)
+              </label>
+              <VoiceInputButton
+                onResult={(transcription) => {
+                  setDescription((prev) => (prev ? `${prev} ${transcription}` : transcription));
+                }}
+              />
+            </div>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
