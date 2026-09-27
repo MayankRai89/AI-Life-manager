@@ -3,8 +3,8 @@ import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import MoodCheckin from "../components/MoodCheckin";
 import TaskList from "../components/TaskList";
-import AIPlanCard from "../components/AIPlanCard";
-import NudgeBanner from "../components/NudgeBanner";
+import DayPlanCard from "../components/DayPlanCard";
+import NudgeCard from "../components/NudgeCard";
 import { fetchTasks } from "../redux/slices/taskSlice";
 import { fetchTodayMood } from "../redux/slices/moodSlice";
 import { fetchAIDayPlan } from "../redux/slices/aiSlice";
@@ -35,8 +35,8 @@ export function Home() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
-      {/* Nudge Banner */}
-      <NudgeBanner />
+      {/* Wellness Nudge - A moment of its own */}
+      <NudgeCard />
 
       {/* Greeting & Quick Stats Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -83,7 +83,7 @@ export function Home() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column: AI Day Plan Card (7 cols on large screens) */}
         <div className="lg:col-span-7 space-y-6">
-          <AIPlanCard />
+          <DayPlanCard />
         </div>
 
         {/* Right Column: High Priority Action Items (5 cols on large screens) */}

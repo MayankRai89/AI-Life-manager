@@ -12,6 +12,7 @@ import { Button } from "./ui/Button";
 import { Badge } from "./ui/Badge";
 import { Input } from "./ui/Input";
 import { Modal } from "./ui/Modal";
+import { TaskPriorityBadge } from "./TaskPriorityBadge";
 import {
   CheckCircle2,
   Circle,
@@ -164,7 +165,7 @@ export function TaskList({ showHeader = true, maxItems = null }) {
               className="gap-1.5 border-teal-200 text-teal-700 hover:bg-teal-50"
             >
               <Sparkles className="h-3.5 w-3.5 text-teal-600" />
-              <span>{loadingScores ? "Scoring Tasks..." : "AI Prioritize"}</span>
+              <span>{loadingScores ? "Tuning priorities..." : "Prioritize for today"}</span>
             </Button>
 
             <Button
@@ -176,6 +177,17 @@ export function TaskList({ showHeader = true, maxItems = null }) {
               <span>Add Task</span>
             </Button>
           </div>
+        </div>
+      )}
+
+      {/* Thoughtful loading state for task prioritization */}
+      {loadingScores && (
+        <div className="flex items-center gap-3 rounded-2xl border border-teal-200/80 bg-gradient-to-r from-teal-50/80 via-cyan-50/60 to-white p-3.5 text-xs text-teal-900 animate-pulse">
+          <div className="relative flex h-2.5 w-2.5 shrink-0">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75 animate-ping" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-teal-600" />
+          </div>
+          <span>Looking at what matters most... matching tasks with your headspace.</span>
         </div>
       )}
 
@@ -263,14 +275,24 @@ export function TaskList({ showHeader = true, maxItems = null }) {
                         {task.title}
                       </h4>
 
-                      {/* AI Priority Score Badge */}
-                      {task.aiScore && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-teal-500/10 to-cyan-500/15 border border-teal-300/60 px-2 py-0.5 text-[10px] font-bold text-teal-800 shadow-2xs">
-                          <Zap className="h-2.5 w-2.5 text-teal-600 fill-teal-600" />
-                          AI Score: {task.aiScore}
-                        </span>
-                      )}
+                      {/* Human-Friendly AI Priority Badge with visual dot & expandable why */}
+                      {(task.aiScore !== undefined && task.aiScore !== null) ? (
+                        <TaskPriorityBadge
+                          score={task.aiScore}
+                          reason={task.aiReason}
+                          isLoading={loadingScores}
+                          showWhyAffordance={true}
+                        />
+                      ) : null}
                     </div>
+
+                    {/* AI Reason Subtitle directly under task for trust-building */}
+                    {task.aiReason && !isCompleted && (
+                      <p className="text-xs text-teal-800/90 font-medium flex items-center gap-1.5 pt-0.5">
+                        <Sparkles className="h-3.5 w-3.5 text-teal-600 shrink-0" />
+                        <span>{task.aiReason}</span>
+                      </p>
+                    )}
 
                     {task.description && (
                       <p className="text-xs text-slate-500 line-clamp-2">
@@ -280,12 +302,15 @@ export function TaskList({ showHeader = true, maxItems = null }) {
 
                     {/* Metadata tags */}
                     <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-slate-500">
-                      <Badge
-                        variant={getPriorityBadgeVariant(task.priority)}
-                        className="capitalize text-[10px]"
-                      >
-                        {task.priority}
-                      </Badge>
+                      {/* Only show raw priority badge if AI score is not already providing it */}
+                      {(task.aiScore === undefined || task.aiScore === null) && (
+                        <Badge
+                          variant={getPriorityBadgeVariant(task.priority)}
+                          className="capitalize text-[10px]"
+                        >
+                          {task.priority}
+                        </Badge>
+                      )}
 
                       <span className="inline-flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-md text-slate-600 font-medium">
                         <Tag className="h-3 w-3 text-slate-400" />
@@ -307,14 +332,6 @@ export function TaskList({ showHeader = true, maxItems = null }) {
                         </span>
                       )}
                     </div>
-
-                    {/* AI Reasoning explanation if available */}
-                    {task.aiReason && !isCompleted && (
-                      <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-teal-700/90 bg-teal-50/50 px-2.5 py-1 rounded-lg border border-teal-100">
-                        <Sparkles className="h-3 w-3 text-teal-600 shrink-0" />
-                        <span className="italic">{task.aiReason}</span>
-                      </div>
-                    )}
                   </div>
                 </div>
 

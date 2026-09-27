@@ -100,8 +100,8 @@ export const MOCK_INITIAL_TASKS = [
     dueDate: new Date(Date.now() + 86400000).toISOString().split("T")[0],
     dueTime: "14:00",
     estimatedDuration: 45,
-    aiScore: 94,
-    aiReason: "High impact, aligns with high morning energy window",
+    aiScore: 0.94,
+    aiReason: "High strategic impact; best tackled during your crisp morning energy window.",
   },
   {
     _id: "task-2",
@@ -113,8 +113,8 @@ export const MOCK_INITIAL_TASKS = [
     dueDate: new Date().toISOString().split("T")[0],
     dueTime: "12:30",
     estimatedDuration: 30,
-    aiScore: 88,
-    aiReason: "Essential restorative pause to prevent midday cognitive fatigue",
+    aiScore: 0.85,
+    aiReason: "Essential restorative pause to prevent midday cognitive fatigue.",
   },
   {
     _id: "task-3",
@@ -126,8 +126,8 @@ export const MOCK_INITIAL_TASKS = [
     dueDate: new Date(Date.now() + 172800000).toISOString().split("T")[0],
     dueTime: "17:00",
     estimatedDuration: 60,
-    aiScore: 91,
-    aiReason: "Urgent milestone, best tackled when feeling grounded",
+    aiScore: 0.72,
+    aiReason: "Complex work; recommended to start once urgent blocking items are completed.",
   },
   {
     _id: "task-4",
@@ -139,8 +139,8 @@ export const MOCK_INITIAL_TASKS = [
     dueDate: new Date(Date.now() - 86400000).toISOString().split("T")[0],
     dueTime: "18:00",
     estimatedDuration: 25,
-    aiScore: 65,
-    aiReason: "Low cognitive load task, ideal for wind-down periods",
+    aiScore: 0.35,
+    aiReason: "Low cognitive demand; ideal for low-energy wind-down periods.",
   },
 ];
 
@@ -156,9 +156,11 @@ export const MOCK_INITIAL_MOOD = {
 
 export const MOCK_AI_PLAN = {
   summary:
-    "You are feeling Calm and Centered with optimal energy (7/10). Today's rhythm should prioritize deep focus in the morning, followed by a mindful movement break, and light collaborative tasks in the afternoon.",
-  moodAssessment: "Stable emotional baseline with low cognitive resistance.",
-  energyPattern: "Peak focus: 09:30 - 12:00. Optimal restorative window: 13:00 - 14:00.",
+    "Here's a gentle plan that fits how you're feeling today. Your calm headspace and steady energy (7/10) make morning ideal for strategic work, followed by a mindful walking break before concluding with administrative items.",
+  orderedTaskIds: ["task-1", "task-3", "task-2"],
+  notes:
+    "We arranged your schedule around your high morning clarity window (09:30–12:00) to keep cognitive resistance low, reserving the midday lull for movement and restorative recovery.",
+  wellnessTip: "Protect your calm state by keeping non-urgent notifications silenced until 11:00 AM.",
   suggestedOrder: [
     {
       taskId: "task-1",
@@ -185,14 +187,12 @@ export const MOCK_AI_PLAN = {
       reason: "Provides physical reset and sensory recovery between deep work blocks.",
     },
   ],
-  wellnessTip: "Protect your calm state by keeping message notifications silent until 11:00 AM.",
 };
 
 export const MOCK_NUDGE = {
   id: "nudge-1",
-  type: "gentle_reminder",
-  title: "Hydration & Eye Relief",
-  message: "Take a sip of water and look 20 feet away for 20 seconds. Your mind will thank you.",
-  category: "mindfulness",
-  icon: "droplet",
+  nudge:
+    "Take a slow sip of cool water and let your shoulders drop. A 20-second pause will restore your focus.",
+  category: "hydrate",
+  title: "Gentle Hydration Break",
 };
