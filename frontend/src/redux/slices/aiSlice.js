@@ -96,12 +96,18 @@ const aiSlice = createSlice({
       })
       .addCase(fetchAIDayPlan.fulfilled, (state, action) => {
         state.loadingPlan = false;
-        if (action.payload?.suggestion) {
-          // If suggestion returned as markdown/text or structured
+        if (action.payload) {
           state.dayPlan = {
             ...state.dayPlan,
-            summary: action.payload.suggestion,
-            meta: action.payload.meta,
+            ...(typeof action.payload === "object" ? action.payload : {}),
+            summary:
+              action.payload.summary ||
+              action.payload.suggestion ||
+              state.dayPlan.summary,
+            orderedTaskIds:
+              action.payload.orderedTaskIds || state.dayPlan.orderedTaskIds,
+            notes: action.payload.notes || state.dayPlan.notes,
+            meta: action.payload.meta || state.dayPlan.meta,
           };
         }
       })
