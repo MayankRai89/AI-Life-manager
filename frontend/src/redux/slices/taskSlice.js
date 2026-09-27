@@ -93,10 +93,16 @@ const taskSlice = createSlice({
       state.selectedTask = action.payload;
     },
     updateTaskScoresFromAI: (state, action) => {
-      // action.payload: array of { taskId, score, reason }
+      // Handles both { scores: [{ id, score, reason }] } and array of items
+      const list = Array.isArray(action.payload)
+        ? action.payload
+        : action.payload?.scores || action.payload?.tasks || [];
       const scoreMap = new Map();
-      action.payload.forEach((item) => {
-        scoreMap.set(item.taskId, item);
+      list.forEach((item) => {
+        const idKey = item.id || item.taskId || item._id;
+        if (idKey) {
+          scoreMap.set(idKey, item);
+        }
       });
       state.tasks = state.tasks.map((t) => {
         if (scoreMap.has(t._id)) {
