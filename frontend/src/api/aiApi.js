@@ -1,8 +1,10 @@
 import apiClient from "./client";
 
 export const aiApi = {
-  getDailySuggestion: async () => {
-    const response = await apiClient.get("/ai/daily-suggestion");
+  getDailySuggestion: async (forceRefresh = false) => {
+    const response = await apiClient.get("/ai/daily-suggestion", {
+      params: forceRefresh ? { forceRefresh: true } : {},
+    });
     return response.data;
   },
 
