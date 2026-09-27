@@ -106,7 +106,18 @@ const aiSlice = createSlice({
               state.dayPlan.summary,
             orderedTaskIds:
               action.payload.orderedTaskIds || state.dayPlan.orderedTaskIds,
-            notes: action.payload.notes || state.dayPlan.notes,
+            focusTasks:
+              action.payload.focusTasks ||
+              action.payload.plan?.focusTasks ||
+              state.dayPlan?.focusTasks,
+            wellnessActivities:
+              action.payload.wellnessActivities ||
+              action.payload.plan?.wellnessActivities ||
+              state.dayPlan?.wellnessActivities,
+            notes:
+              action.payload.notes ||
+              action.payload.plan?.notes ||
+              state.dayPlan.notes,
             meta: action.payload.meta || state.dayPlan.meta,
           };
         }
