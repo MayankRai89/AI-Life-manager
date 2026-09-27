@@ -64,18 +64,27 @@ ${pendingTasks || "  No pending tasks"}
 ---
 
 ## Instructions
-Based on the above data, provide:
-
-**1. Top 3 Focus Tasks for Today**
-For each task, briefly explain WHY it suits the user's current energy and mood.
-
-**2. Wellness Activities (2 suggestions)**
-Short, practical activities matching their current mood and stress level.
-
-**3. Motivational Insight**
-One empathetic insight about their mood pattern and a positive forward-looking statement.
-
-Keep your response structured, warm, and under 400 words.`;
+Respond ONLY with a valid JSON object (no markdown fences, no raw headers, no extra commentary):
+{
+  "summary": "Warm, conversational 1-2 sentence message from a thoughtful friend acknowledging ${name}'s mood and pacing the day. Avoid robotic jargon.",
+  "orderedTaskIds": [],
+  "focusTasks": [
+    {
+      "title": "Concise task title",
+      "action": "Concrete next step",
+      "reason": "Why it suits their energy and headspace",
+      "timeSlot": "Morning or Afternoon"
+    }
+  ],
+  "wellnessActivities": [
+    {
+      "title": "Activity name (e.g. Mindful Breathing)",
+      "description": "Short practical guidance",
+      "type": "rest or move or hydrate"
+    }
+  ],
+  "notes": "One empathetic insight about their mood pattern and a positive forward-looking statement to build resilience."
+}`;
 };
 
 /**

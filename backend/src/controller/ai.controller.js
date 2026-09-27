@@ -33,10 +33,29 @@ export const getDailySuggestion = asyncHandler(async (req, res) => {
     tasks,
   });
 
+  // Try to parse structured JSON from model
+  let parsedPlan = null;
+  try {
+    const cleaned = (result.text || "")
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/```\s*$/i, "")
+      .trim();
+    parsedPlan = JSON.parse(cleaned);
+  } catch (err) {
+    // If not JSON, frontend will use the intelligent markdown parser
+  }
+
   res.status(200).json({
     status: "success",
     data: {
-      suggestion: result.text,
+      plan: parsedPlan,
+      suggestion: parsedPlan?.summary || result.text,
+      summary: parsedPlan?.summary || result.text,
+      orderedTaskIds: parsedPlan?.orderedTaskIds || [],
+      focusTasks: parsedPlan?.focusTasks || [],
+      wellnessActivities: parsedPlan?.wellnessActivities || [],
+      notes: parsedPlan?.notes || null,
       meta: {
         provider: result.provider,
         duration: result.duration,
