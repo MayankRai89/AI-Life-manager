@@ -49,8 +49,8 @@ export function MoodCheckin() {
     const res = await dispatch(submitMoodCheckin(payload));
     if (!res.error) {
       setFeedbackMsg(`Mood logged as ${activePreset.label}. Updating your AI day plan...`);
-      // Re-trigger AI daily suggestion and task prioritization
-      dispatch(fetchAIDayPlan());
+      // Re-trigger AI daily suggestion for the new mood and task prioritization
+      dispatch(fetchAIDayPlan(true));
       dispatch(fetchAIPrioritizedTasks());
       setTimeout(() => setFeedbackMsg(""), 4500);
     }
