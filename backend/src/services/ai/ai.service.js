@@ -27,7 +27,10 @@ const callGemini = async (prompt, temperature = 0.7, maxTokens = 1024) => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), PROVIDER_TIMEOUT_MS);
   try {
-    const apiKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || process.env.GEMNI_API;
+    const apiKey =
+      process.env.GOOGLE_API_KEY ||
+      process.env.GEMINI_API_KEY ||
+      process.env.GEMNI_API;
     if (!apiKey) throw new Error("Gemini API key not configured");
 
     const response = await fetch(
@@ -40,10 +43,10 @@ const callGemini = async (prompt, temperature = 0.7, maxTokens = 1024) => {
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
             temperature,
-            maxOutputTokens: Math.max(maxTokens, 512), // ensure minimum 512 tokens
+            maxOutputTokens: Math.max(maxTokens, 512),
           },
         }),
-      }
+      },
     );
 
     const data = await response.json();
@@ -58,9 +61,17 @@ const callGemini = async (prompt, temperature = 0.7, maxTokens = 1024) => {
       error: null,
     };
   } catch (err) {
-    const msg = err.name === "AbortError" ? `Gemini timeout (>${PROVIDER_TIMEOUT_MS}ms)` : err.message;
+    const msg =
+      err.name === "AbortError"
+        ? `Gemini timeout (>${PROVIDER_TIMEOUT_MS}ms)`
+        : err.message;
     logger.warn(`[AI] Gemini failed: ${msg}`);
-    return { provider: "gemini", text: null, duration: Date.now() - start, error: msg };
+    return {
+      provider: "gemini",
+      text: null,
+      duration: Date.now() - start,
+      error: msg,
+    };
   } finally {
     clearTimeout(timer);
   }
@@ -94,14 +105,29 @@ const callMistral = async (prompt, temperature = 0.7, maxTokens = 1024) => {
 
     const data = await response.json();
     if (!response.ok)
-      throw new Error(data?.message || data?.error?.message || "Mistral API error");
+      throw new Error(
+        data?.message || data?.error?.message || "Mistral API error",
+      );
 
     const text = data?.choices?.[0]?.message?.content || "";
-    return { provider: "mistral", text: text.trim(), duration: Date.now() - start, error: null };
+    return {
+      provider: "mistral",
+      text: text.trim(),
+      duration: Date.now() - start,
+      error: null,
+    };
   } catch (err) {
-    const msg = err.name === "AbortError" ? `Mistral timeout (>${PROVIDER_TIMEOUT_MS}ms)` : err.message;
+    const msg =
+      err.name === "AbortError"
+        ? `Mistral timeout (>${PROVIDER_TIMEOUT_MS}ms)`
+        : err.message;
     logger.warn(`[AI] Mistral failed: ${msg}`);
-    return { provider: "mistral", text: null, duration: Date.now() - start, error: msg };
+    return {
+      provider: "mistral",
+      text: null,
+      duration: Date.now() - start,
+      error: msg,
+    };
   } finally {
     clearTimeout(timer);
   }
@@ -138,11 +164,24 @@ const callCohere = async (prompt, temperature = 0.7, maxTokens = 1024) => {
     if (!response.ok) throw new Error(data?.message || "Cohere API error");
 
     const text = data?.message?.content?.[0]?.text || "";
-    return { provider: "cohere", text: text.trim(), duration: Date.now() - start, error: null };
+    return {
+      provider: "cohere",
+      text: text.trim(),
+      duration: Date.now() - start,
+      error: null,
+    };
   } catch (err) {
-    const msg = err.name === "AbortError" ? `Cohere timeout (>${PROVIDER_TIMEOUT_MS}ms)` : err.message;
+    const msg =
+      err.name === "AbortError"
+        ? `Cohere timeout (>${PROVIDER_TIMEOUT_MS}ms)`
+        : err.message;
     logger.warn(`[AI] Cohere failed: ${msg}`);
-    return { provider: "cohere", text: null, duration: Date.now() - start, error: msg };
+    return {
+      provider: "cohere",
+      text: null,
+      duration: Date.now() - start,
+      error: msg,
+    };
   } finally {
     clearTimeout(timer);
   }
@@ -201,7 +240,7 @@ const scoreResponse = (result) => {
 export const sendToAllProviders = async (
   prompt,
   temperature = 0.7,
-  maxTokens = 1024
+  maxTokens = 1024,
 ) => {
   logger.debug("[AI] Sending to all 3 providers in parallel...");
 
@@ -214,7 +253,7 @@ export const sendToAllProviders = async (
   const results = [geminiResult, mistralResult, cohereResult];
 
   logger.debug(
-    `[AI] Durations — Gemini: ${geminiResult.duration}ms | Mistral: ${mistralResult.duration}ms | Cohere: ${cohereResult.duration}ms`
+    `[AI] Durations — Gemini: ${geminiResult.duration}ms | Mistral: ${mistralResult.duration}ms | Cohere: ${cohereResult.duration}ms`,
   );
 
   const scored = results.map((r) => ({ ...r, score: scoreResponse(r) }));
@@ -222,14 +261,14 @@ export const sendToAllProviders = async (
   const successful = scored.filter((r) => !r.error && r.text);
   if (successful.length === 0) {
     throw new Error(
-      "All AI providers failed: " + results.map((r) => r.error).join(" | ")
+      "All AI providers failed: " + results.map((r) => r.error).join(" | "),
     );
   }
 
   const best = successful.sort((a, b) => b.score - a.score)[0];
 
   logger.info(
-    `[AI] Winner: ${best.provider} (score: ${best.score.toFixed(1)}, ${best.duration}ms)`
+    `[AI] Winner: ${best.provider} (score: ${best.score.toFixed(1)}, ${best.duration}ms)`,
   );
 
   return {
@@ -260,7 +299,7 @@ export const sendToAllProviders = async (
 export const generateDailySuggestion = async ({ user, moodCheckIn, tasks }) => {
   const { temperature, maxTokens } = getTemperatureConfig(
     "daily_suggestion",
-    moodCheckIn
+    moodCheckIn,
   );
   const prompt = dailySuggestionPrompt({ user, moodCheckIn, tasks });
   return sendToAllProviders(prompt, temperature, maxTokens);
@@ -281,7 +320,7 @@ export const analyzeMoodPatterns = async ({ user, analytics }) => {
 export const prioritizeTasks = async ({ user, moodCheckIn, tasks }) => {
   const { temperature, maxTokens } = getTemperatureConfig(
     "task_prioritization",
-    moodCheckIn
+    moodCheckIn,
   );
   const prompt = taskPrioritizationPrompt({ user, moodCheckIn, tasks });
   return sendToAllProviders(prompt, temperature, maxTokens);
