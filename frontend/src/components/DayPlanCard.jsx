@@ -346,7 +346,7 @@ export function DayPlanCard({
     if (propOnRefresh) {
       propOnRefresh();
     } else {
-      dispatch(fetchAIDayPlan());
+      dispatch(fetchAIDayPlan(true));
     }
   };
 
