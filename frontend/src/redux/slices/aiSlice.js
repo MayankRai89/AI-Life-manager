@@ -5,9 +5,9 @@ import { updateTaskScoresFromAI } from "./taskSlice";
 
 export const fetchAIDayPlan = createAsyncThunk(
   "ai/fetchAIDayPlan",
-  async (_, { rejectWithValue }) => {
+  async (forceRefresh = false, { rejectWithValue }) => {
     try {
-      const data = await aiApi.getDailySuggestion();
+      const data = await aiApi.getDailySuggestion(forceRefresh);
       return data.data || data;
     } catch (err) {
       // In development or if no mood logged yet, provide a generated fallback based on current state
