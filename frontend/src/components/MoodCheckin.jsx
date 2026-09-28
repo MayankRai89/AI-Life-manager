@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   submitMoodCheckin,
@@ -35,6 +35,26 @@ export function MoodCheckin() {
   const [note, setNote] = useState("");
   const [feedbackMsg, setFeedbackMsg] = useState("");
 
+  const debounceDayPlanTimer = useRef(null);
+
+  // Debounce the automatic fetchAIDayPlan call to prevent duplicate triggers
+  const debouncedFetchDayPlan = useCallback(() => {
+    if (debounceDayPlanTimer.current) {
+      clearTimeout(debounceDayPlanTimer.current);
+    }
+    debounceDayPlanTimer.current = setTimeout(() => {
+      dispatch(fetchAIDayPlan(true));
+    }, 600);
+  }, [dispatch]);
+
+  useEffect(() => {
+    return () => {
+      if (debounceDayPlanTimer.current) {
+        clearTimeout(debounceDayPlanTimer.current);
+      }
+    };
+  }, []);
+
   const activePreset =
     PRESET_MOODS.find((m) => m.id === selectedMoodPreset) || PRESET_MOODS[1];
 
@@ -47,6 +67,10 @@ export function MoodCheckin() {
   const handleSubmit = async (e) => {
     e?.preventDefault();
     const now = new Date();
+    const clientTimeZone =
+      Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
+    // Formatted time is not stored; derived dynamically from checkInTime + timeZone
     const payload = {
       mood: selectedMoodPreset,
       moodScore: activePreset.moodScore,
@@ -55,15 +79,20 @@ export function MoodCheckin() {
       note: note.trim() || `Feeling ${activePreset.label} today.`,
       emotions: [selectedMoodPreset],
       checkInTime: now.toISOString(),
-      time: now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
-      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+      timeZone: clientTimeZone,
     };
 
     const res = await dispatch(submitMoodCheckin(payload));
     if (!res.error) {
-      setFeedbackMsg(`Mood logged as ${activePreset.label} at ${payload.time}. Updating your AI day plan...`);
-      // Re-trigger AI daily suggestion for the new mood and task prioritization
-      dispatch(fetchAIDayPlan(true));
+      const formattedTime = now.toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit",
+      });
+      setFeedbackMsg(
+        `Mood logged as ${activePreset.label} at ${formattedTime}. Updating your AI day plan...`
+      );
+      // Debounce the automatic fetchAIDayPlan call
+      debouncedFetchDayPlan();
       dispatch(fetchAIPrioritizedTasks());
       setTimeout(() => setFeedbackMsg(""), 4500);
     }

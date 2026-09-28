@@ -12,12 +12,96 @@
  */
 export const SYSTEM_PERSONA = `You are an empathetic and intelligent AI Life Manager assistant.
 Your role is to help users optimize their productivity, mental wellness, and daily planning
-based on real data about their mood, tasks, and schedule. Always be concise, kind, and actionable.`;
+based on real data about their mood, tasks, and schedule. Always be concise, kind, and actionable.
+Give wellness and productivity suggestions only. Never give medical advice, diagnosis, or medication guidance. If health topics come up, suggest consulting a professional.`;
+
+/**
+ * Convert user medicalReport into short non-identifying flags.
+ * Never includes raw conditions, medications, notes or document URLs in any prompt.
+ * Only returns flags if user has consented to AI personalization.
+ *
+ * @param {Object} user
+ * @returns {Array<string>}
+ */
+export const buildHealthFlags = (user) => {
+  if (!user?.consent?.aiPersonalization) {
+    return [];
+  }
+
+  const report = user.medicalReport;
+  if (!report) {
+    return [];
+  }
+
+  const flags = new Set();
+  const textBlob = [
+    ...(report.conditions || []),
+    ...(report.allergies || []),
+    ...(report.medications || []),
+    report.notes || "",
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  if (!textBlob.trim()) {
+    return [];
+  }
+
+  // Dietary preferences / safety flags
+  if (/vegan/.test(textBlob)) {
+    flags.add("vegan diet preference");
+  } else if (/vegetarian|veg\b/.test(textBlob)) {
+    flags.add("vegetarian diet preference");
+  }
+  if (/lactose|dairy|milk/.test(textBlob)) {
+    flags.add("dairy-free preference");
+  }
+  if (/celiac|gluten/.test(textBlob)) {
+    flags.add("gluten-free preference");
+  }
+  if (/nut|peanut/.test(textBlob)) {
+    flags.add("nut allergy safety precaution");
+  }
+
+  // Physical exertion flags
+  if (
+    /asthma|breath|lung|cardiac|heart|hypertension|blood pressure|joint|knee|back pain|injury|surgery|fatigue/.test(
+      textBlob,
+    )
+  ) {
+    flags.add("avoid intense exercise suggestions, favor low-impact movement");
+  }
+
+  // Sleep & Rest flags
+  if (/insomnia|sleep|restless/.test(textBlob)) {
+    flags.add("prioritize gentle evening wind-down and sleep hygiene");
+  }
+
+  // Sensory / Stress flags
+  if (/migraine|headache|photophobia/.test(textBlob)) {
+    flags.add("encourage screen breaks and low-stimulation environments");
+  }
+  if (/anxiety|panic|high stress/.test(textBlob)) {
+    flags.add("favor calming pacing and mindfulness suggestions");
+  }
+
+  // Hydration flag
+  if (/dehydration|kidney|water/.test(textBlob)) {
+    flags.add("promote regular hydration reminders");
+  }
+
+  // General fallback flag if medical notes exist without matching specific keywords
+  if (flags.size === 0 && textBlob.trim().length > 0) {
+    flags.add("favor gentle wellness routines and moderate pacing");
+  }
+
+  return Array.from(flags);
+};
 
 /**
  * @template DailySuggestion
  * @desc     Generates a personalized day plan based on mood + tasks
- * @param    {Object} user         - { name, schedule }
+ * @param    {Object} user         - { name, schedule, medicalReport, consent }
  * @param    {Object} moodCheckIn  - { mood, moodScore, energyLevel, stressLevel, triggers, note }
  * @param    {Array}  tasks        - array of task documents
  * @returns  {string}
@@ -40,6 +124,13 @@ export const dailySuggestionPrompt = ({ user, moodCheckIn, tasks }) => {
     )
     .join("\n");
 
+  const healthFlags = buildHealthFlags(user);
+  const healthSection = healthFlags.length
+    ? `\n### Health & Wellness Considerations (Derived Non-Identifying Flags)\n${healthFlags
+        .map((f) => `- ${f}`)
+        .join("\n")}\n`
+    : "";
+
   return `${SYSTEM_PERSONA}
 
 ---
@@ -57,7 +148,7 @@ ${note ? `- Personal Note: "${note}"` : ""}
 - Wake Time: ${schedule?.wakeTime || "07:00"}
 - Work Hours: ${schedule?.workingHours?.start || "09:00"} – ${schedule?.workingHours?.end || "18:00"}
 - Sleep Time: ${schedule?.sleepTime || "23:00"}
-
+${healthSection}
 ### Pending Tasks
 ${pendingTasks || "  No pending tasks"}
 

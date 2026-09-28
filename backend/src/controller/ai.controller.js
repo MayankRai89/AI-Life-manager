@@ -48,7 +48,8 @@ export const getDailySuggestion = asyncHandler(async (req, res) => {
           notes: existingPlan.notes || "",
           meta: {
             fromCache: true,
-            provider: existingPlan.provider,
+            provider: existingPlan.providerUsed || existingPlan.provider,
+            providerUsed: existingPlan.providerUsed || existingPlan.provider,
             basedOnMood: latestMood.mood,
             date: existingPlan.date,
           },
@@ -57,7 +58,44 @@ export const getDailySuggestion = asyncHandler(async (req, res) => {
     }
   }
 
-  // 2. Otherwise generate a new plan from AI and persist to MongoDB
+  // 2. 60-Second Cooldown Check: Prevent repeated AI calls from rapid check-ins
+  const recentPlan = await DayPlan.findOne({ userId: user._id }).sort({
+    updatedAt: -1,
+  });
+
+  if (recentPlan) {
+    const lastPlanTime = new Date(
+      recentPlan.updatedAt || recentPlan.requestedAt || recentPlan.createdAt
+    ).getTime();
+    const elapsedMs = Date.now() - lastPlanTime;
+    const COOLDOWN_MS = 60 * 1000;
+
+    if (elapsedMs < COOLDOWN_MS) {
+      return res.status(200).json({
+        status: "success",
+        data: {
+          plan: recentPlan,
+          suggestion: recentPlan.summary,
+          summary: recentPlan.summary,
+          orderedTaskIds: recentPlan.orderedTaskIds || [],
+          focusTasks: recentPlan.focusTasks || [],
+          wellnessActivities: recentPlan.wellnessActivities || [],
+          notes: recentPlan.notes || "",
+          meta: {
+            fromCache: true,
+            cooldown: true,
+            cooldownRemainingSeconds: Math.ceil((COOLDOWN_MS - elapsedMs) / 1000),
+            provider: recentPlan.providerUsed || recentPlan.provider,
+            providerUsed: recentPlan.providerUsed || recentPlan.provider,
+            basedOnMood: recentPlan.moodSnapshot?.mood || latestMood.mood,
+            date: recentPlan.date,
+          },
+        },
+      });
+    }
+  }
+
+  // 3. Otherwise generate a new plan from AI and persist to MongoDB
   const { tasks } = await taskService.getTasks(user._id, {
     status: ["pending", "in_progress"],
     limit: 10,
@@ -69,26 +107,31 @@ export const getDailySuggestion = asyncHandler(async (req, res) => {
     tasks,
   });
 
-  // Try to parse structured JSON from model
+  // Parse structured plan from result.data or fallback text
   let parsedPlan = null;
-  try {
-    const cleaned = (result.text || "")
-      .replace(/^```json\s*/i, "")
-      .replace(/^```\s*/i, "")
-      .replace(/```\s*$/i, "")
-      .trim();
-    parsedPlan = JSON.parse(cleaned);
-  } catch (err) {
-    // If model returned markdown, use raw text as summary
+  if (result.data && typeof result.data === "object") {
+    parsedPlan = result.data;
+  } else {
+    try {
+      const cleaned = (result.text || "")
+        .replace(/^```json\s*/i, "")
+        .replace(/^```\s*/i, "")
+        .replace(/```\s*$/i, "")
+        .trim();
+      parsedPlan = JSON.parse(cleaned);
+    } catch (err) {
+      // If model returned markdown, use raw text as summary
+    }
   }
 
-  const summary = parsedPlan?.summary || result.text;
+  const summary = parsedPlan?.summary || result.text || "";
   const focusTasks = parsedPlan?.focusTasks || [];
   const wellnessActivities = parsedPlan?.wellnessActivities || [];
   const notes = parsedPlan?.notes || "";
   const orderedTaskIds = parsedPlan?.orderedTaskIds || [];
+  const providerUsed = result.providerUsed || result.provider || "ai";
 
-  // 3. Save or update the plan in MongoDB linked to this mood check-in
+  // 4. Save or update the plan in MongoDB linked to this mood check-in
   const savedPlan = await DayPlan.findOneAndUpdate(
     { userId: user._id, moodCheckInId: latestMood._id },
     {
@@ -101,14 +144,7 @@ export const getDailySuggestion = asyncHandler(async (req, res) => {
         energyLevel: latestMood.energyLevel,
         stressLevel: latestMood.stressLevel,
         checkInTime: latestMood.checkInTime || latestMood.createdAt || new Date(),
-        time:
-          latestMood.time ||
-          new Date(
-            latestMood.checkInTime || latestMood.createdAt || Date.now()
-          ).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
+        time: latestMood.time || "",
       },
       requestedAt: new Date(),
       summary,
@@ -116,7 +152,8 @@ export const getDailySuggestion = asyncHandler(async (req, res) => {
       wellnessActivities,
       notes,
       orderedTaskIds,
-      provider: result.provider || "ai",
+      provider: providerUsed,
+      providerUsed,
     },
     { upsert: true, new: true, runValidators: true }
   );
@@ -133,8 +170,10 @@ export const getDailySuggestion = asyncHandler(async (req, res) => {
       notes,
       meta: {
         fromCache: false,
-        provider: result.provider,
-        duration: result.duration,
+        provider: providerUsed,
+        providerUsed,
+        duration: result.latencyMs || result.duration,
+        latencyMs: result.latencyMs || result.duration,
         basedOnMood: latestMood.mood,
         taskCount: tasks.length,
         allProviders: result.allProviders,
@@ -166,11 +205,13 @@ export const getMoodAnalysis = asyncHandler(async (req, res) => {
   res.status(200).json({
     status: "success",
     data: {
-      analysis: result.text,
+      analysis: result.data || result.text,
       analyticsSnapshot: analytics.summary,
       meta: {
-        provider: result.provider,
-        duration: result.duration,
+        provider: result.providerUsed || result.provider,
+        providerUsed: result.providerUsed || result.provider,
+        duration: result.latencyMs || result.duration,
+        latencyMs: result.latencyMs || result.duration,
         daysCovered: days,
         allProviders: result.allProviders,
       },
@@ -212,10 +253,12 @@ export const getPrioritizedTasks = asyncHandler(async (req, res) => {
   res.status(200).json({
     status: "success",
     data: {
-      prioritization: result.text,
+      prioritization: result.data || result.text,
       meta: {
-        provider: result.provider,
-        duration: result.duration,
+        provider: result.providerUsed || result.provider,
+        providerUsed: result.providerUsed || result.provider,
+        duration: result.latencyMs || result.duration,
+        latencyMs: result.latencyMs || result.duration,
         taskCount: tasks.length,
         currentMood: latestMood.mood,
         allProviders: result.allProviders,
@@ -244,10 +287,12 @@ export const chat = asyncHandler(async (req, res) => {
   res.status(200).json({
     status: "success",
     data: {
-      reply: result.text,
+      reply: result.data || result.text,
       meta: {
-        provider: result.provider,
-        duration: result.duration,
+        provider: result.providerUsed || result.provider,
+        providerUsed: result.providerUsed || result.provider,
+        duration: result.latencyMs || result.duration,
+        latencyMs: result.latencyMs || result.duration,
         allProviders: result.allProviders,
       },
     },

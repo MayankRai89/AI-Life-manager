@@ -9,6 +9,8 @@ import {
 } from "../redux/slices/moodSlice";
 import { fetchAIDayPlan, fetchAIPrioritizedTasks } from "../redux/slices/aiSlice";
 
+let dayPlanDebounceTimer = null;
+
 export function useMoodCheckin() {
   const dispatch = useDispatch();
   const moodState = useSelector((state) => state.mood);
@@ -23,7 +25,10 @@ export function useMoodCheckin() {
     submitCheckin: async (payload) => {
       const res = await dispatch(submitMoodCheckin(payload));
       if (!res.error) {
-        dispatch(fetchAIDayPlan());
+        if (dayPlanDebounceTimer) clearTimeout(dayPlanDebounceTimer);
+        dayPlanDebounceTimer = setTimeout(() => {
+          dispatch(fetchAIDayPlan(true));
+        }, 600);
         dispatch(fetchAIPrioritizedTasks());
       }
       return res;

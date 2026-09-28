@@ -108,8 +108,8 @@ export function Register() {
       setValidationError("Email is required.");
       return;
     }
-    if (!password || password.length < 6) {
-      setValidationError("Password must be at least 6 characters long.");
+    if (!password || password.length < 8) {
+      setValidationError("Password must be at least 8 characters long.");
       return;
     }
 
@@ -232,7 +232,7 @@ export function Register() {
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
-                    placeholder="At least 6 characters"
+                    placeholder="At least 8 characters"
                     value={password}
                     onChange={(e) => {
                       dispatch(clearAuthError());
@@ -240,7 +240,7 @@ export function Register() {
                       setPassword(e.target.value);
                     }}
                     required
-                    minLength={6}
+                    minLength={8}
                     className="flex h-11 w-full rounded-xl border border-slate-200 bg-white/80 pl-3.5 pr-10 py-2 text-sm text-slate-800 placeholder:text-slate-400 transition-all duration-150 focus:border-teal-500 focus:bg-white focus:outline-none focus:ring-3 focus:ring-teal-500/15"
                   />
                   <button

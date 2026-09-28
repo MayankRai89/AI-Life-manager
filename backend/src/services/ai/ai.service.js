@@ -7,8 +7,74 @@ import {
   quickChatPrompt,
 } from "./promptTemplet.js";
 
-/** Per-provider fetch timeout — prevents one slow provider from blocking Promise.all */
+/** Per-provider fetch timeout — prevents one slow provider from blocking fallback/fanout */
 const PROVIDER_TIMEOUT_MS = 10000;
+
+/** Default AI mode: 'fallback' | 'fanout' */
+export const AI_MODE = process.env.AI_MODE || "fallback";
+
+/**
+ * Parses and extracts JSON object safely from raw text or markdown fence
+ */
+export const extractAndParseJSON = (text) => {
+  if (!text || typeof text !== "string") return null;
+  const cleaned = text
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```\s*$/i, "")
+    .trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    const match = cleaned.match(/\{[\s\S]*\}/);
+    if (match) {
+      try {
+        return JSON.parse(match[0]);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+};
+
+/**
+ * Validates the parsed JSON shape for a DayPlan:
+ * Required: summary (string), focusTasks (array), wellnessActivities (array), notes (string)
+ */
+export const validateDayPlanShape = (data) => {
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    return false;
+  }
+  if (typeof data.summary !== "string" || !data.summary.trim()) {
+    return false;
+  }
+  if (!Array.isArray(data.focusTasks)) {
+    return false;
+  }
+  if (!Array.isArray(data.wellnessActivities)) {
+    return false;
+  }
+  if (data.notes !== undefined && typeof data.notes !== "string") {
+    return false;
+  }
+  return true;
+};
+
+/**
+ * Configurable provider order (default: Gemini, Mistral, Cohere)
+ */
+export const getProviderOrder = () => {
+  const envOrder = process.env.AI_PROVIDER_ORDER;
+  if (envOrder) {
+    const parsed = envOrder
+      .split(",")
+      .map((p) => p.trim().toLowerCase())
+      .filter((p) => ["gemini", "mistral", "cohere"].includes(p));
+    if (parsed.length > 0) return parsed;
+  }
+  return ["gemini", "mistral", "cohere"];
+};
 
 /**
  * ============================================================
@@ -223,26 +289,98 @@ const scoreResponse = (result) => {
   return Math.max(0, score);
 };
 
+const providerCallers = {
+  gemini: callGemini,
+  mistral: callMistral,
+  cohere: callCohere,
+};
+
 /**
  * ============================================================
- * CORE: Send to All Providers (Multi-Provider Fan-Out)
+ * ORCHESTRATOR MODE 1: Fallback Runner
  * ============================================================
- * Step 1: Send the same prompt to Gemini + Mistral + Cohere in parallel
- * Step 2: Score each response (quality, structure, speed)
- * Step 3: Return the best result + metadata about all providers
+ * Sequentially tries providers in configurable order (default: Gemini, Mistral, Cohere).
+ * Advances to next provider only if call throws, times out, or fails schema validation.
+ * Stops at first valid result. Returns { data, providerUsed, latencyMs }.
  * ============================================================
- *
- * @param {string} prompt
- * @param {number} temperature
- * @param {number} maxTokens
- * @returns {Promise<{ text, provider, duration, allProviders }>}
  */
-export const sendToAllProviders = async (
+export const executeFallback = async (
   prompt,
   temperature = 0.7,
   maxTokens = 1024,
+  schemaValidator = null
 ) => {
-  logger.debug("[AI] Sending to all 3 providers in parallel...");
+  const order = getProviderOrder();
+  const errors = [];
+  const start = Date.now();
+
+  for (const providerName of order) {
+    const caller = providerCallers[providerName];
+    if (!caller) continue;
+
+    logger.info(`[AI Orchestrator: Fallback] Trying provider '${providerName}'...`);
+    try {
+      const result = await caller(prompt, temperature, maxTokens);
+      if (result.error || !result.text) {
+        const errMsg = result.error || "Empty response";
+        errors.push(`${providerName}: ${errMsg}`);
+        logger.warn(`[AI Orchestrator: Fallback] ${providerName} unavailable: ${errMsg}`);
+        continue;
+      }
+
+      let parsedData = result.text;
+      if (schemaValidator) {
+        const parsedJson = extractAndParseJSON(result.text);
+        if (!parsedJson || !schemaValidator(parsedJson)) {
+          const validationErr = `${providerName}: Response failed schema validation`;
+          errors.push(validationErr);
+          logger.warn(`[AI Orchestrator: Fallback] ${validationErr}`);
+          continue;
+        }
+        parsedData = parsedJson;
+      }
+
+      const latencyMs = Date.now() - start;
+      logger.info(
+        `[AI Orchestrator: Fallback] Success with provider '${providerName}' (${latencyMs}ms)`
+      );
+
+      return {
+        data: parsedData,
+        providerUsed: result.provider,
+        latencyMs,
+        // Backwards-compatibility fields
+        text: result.text,
+        provider: result.provider,
+        duration: result.duration,
+      };
+    } catch (err) {
+      errors.push(`${providerName}: ${err.message}`);
+      logger.warn(`[AI Orchestrator: Fallback] Error in ${providerName}: ${err.message}`);
+      continue;
+    }
+  }
+
+  throw new Error(`All AI fallback providers failed: ${errors.join(" | ")}`);
+};
+
+/**
+ * ============================================================
+ * ORCHESTRATOR MODE 2: Fan-Out Runner
+ * ============================================================
+ * Sends prompt to all providers in parallel, validates schema,
+ * scores successful responses, and returns the highest scoring result.
+ * Returns { data, providerUsed, latencyMs }.
+ * ============================================================
+ */
+export const executeFanout = async (
+  prompt,
+  temperature = 0.7,
+  maxTokens = 1024,
+  schemaValidator = null
+) => {
+  const start = Date.now();
+  logger.debug("[AI Orchestrator: Fanout] Sending to all providers in parallel...");
 
   const [geminiResult, mistralResult, cohereResult] = await Promise.all([
     callGemini(prompt, temperature, maxTokens),
@@ -253,56 +391,103 @@ export const sendToAllProviders = async (
   const results = [geminiResult, mistralResult, cohereResult];
 
   logger.debug(
-    `[AI] Durations — Gemini: ${geminiResult.duration}ms | Mistral: ${mistralResult.duration}ms | Cohere: ${cohereResult.duration}ms`,
+    `[AI Orchestrator: Fanout] Durations — Gemini: ${geminiResult.duration}ms | Mistral: ${mistralResult.duration}ms | Cohere: ${cohereResult.duration}ms`
   );
 
-  const scored = results.map((r) => ({ ...r, score: scoreResponse(r) }));
+  const scored = results.map((r) => {
+    let valid = !r.error && !!r.text;
+    let parsed = null;
+    if (valid && schemaValidator) {
+      parsed = extractAndParseJSON(r.text);
+      if (!parsed || !schemaValidator(parsed)) {
+        valid = false;
+      }
+    }
+    return {
+      ...r,
+      parsed,
+      valid,
+      score: valid ? scoreResponse(r) : 0,
+    };
+  });
 
-  const successful = scored.filter((r) => !r.error && r.text);
+  const successful = scored.filter((r) => r.valid);
   if (successful.length === 0) {
     throw new Error(
-      "All AI providers failed: " + results.map((r) => r.error).join(" | "),
+      "All AI providers failed: " +
+        results
+          .map((r) => r.error || (r.text ? "Failed schema validation" : "No text"))
+          .join(" | ")
     );
   }
 
   const best = successful.sort((a, b) => b.score - a.score)[0];
+  const latencyMs = Date.now() - start;
 
   logger.info(
-    `[AI] Winner: ${best.provider} (score: ${best.score.toFixed(1)}, ${best.duration}ms)`,
+    `[AI Orchestrator: Fanout] Winner: ${best.provider} (score: ${best.score.toFixed(1)}, ${best.duration}ms)`
   );
 
   return {
+    data: best.parsed !== null ? best.parsed : best.text,
+    providerUsed: best.provider,
+    latencyMs,
     text: best.text,
     provider: best.provider,
     duration: best.duration,
-    allProviders: scored.map(({ provider, duration, score, error }) => ({
+    allProviders: scored.map(({ provider, duration, score, error, valid }) => ({
       provider,
       duration,
       score: parseFloat(score.toFixed(1)),
-      success: !error,
-      error: error || null,
+      success: valid,
+      error: error || (valid ? null : "Schema validation failed"),
     })),
   };
 };
 
 /**
+ * Main AI Orchestrator Dispatcher:
+ * Switches between 'fallback' and 'fanout' based on AI_MODE env var.
+ */
+export const runAIOrchestrator = async (
+  prompt,
+  temperature = 0.7,
+  maxTokens = 1024,
+  schemaValidator = null
+) => {
+  const mode = (process.env.AI_MODE || "fallback").toLowerCase().trim();
+  if (mode === "fanout") {
+    return executeFanout(prompt, temperature, maxTokens, schemaValidator);
+  }
+  return executeFallback(prompt, temperature, maxTokens, schemaValidator);
+};
+
+/** Backwards-compatible export for fanout */
+export const sendToAllProviders = async (
+  prompt,
+  temperature = 0.7,
+  maxTokens = 1024
+) => {
+  return executeFanout(prompt, temperature, maxTokens, null);
+};
+
+/**
  * ============================================================
  * HIGH-LEVEL AI ACTIONS
- * These functions build the prompt + get temperature config,
- * then fan out to all providers and return the best result.
  * ============================================================
  */
 
 /**
  * Generate a personalized daily plan based on mood + tasks
+ * Uses schema validation for { summary, focusTasks, wellnessActivities, notes }
  */
 export const generateDailySuggestion = async ({ user, moodCheckIn, tasks }) => {
   const { temperature, maxTokens } = getTemperatureConfig(
     "daily_suggestion",
-    moodCheckIn,
+    moodCheckIn
   );
   const prompt = dailySuggestionPrompt({ user, moodCheckIn, tasks });
-  return sendToAllProviders(prompt, temperature, maxTokens);
+  return runAIOrchestrator(prompt, temperature, maxTokens, validateDayPlanShape);
 };
 
 /**
@@ -311,7 +496,7 @@ export const generateDailySuggestion = async ({ user, moodCheckIn, tasks }) => {
 export const analyzeMoodPatterns = async ({ user, analytics }) => {
   const { temperature, maxTokens } = getTemperatureConfig("mood_analysis");
   const prompt = moodAnalysisPrompt({ user, analytics });
-  return sendToAllProviders(prompt, temperature, maxTokens);
+  return runAIOrchestrator(prompt, temperature, maxTokens);
 };
 
 /**
@@ -320,10 +505,10 @@ export const analyzeMoodPatterns = async ({ user, analytics }) => {
 export const prioritizeTasks = async ({ user, moodCheckIn, tasks }) => {
   const { temperature, maxTokens } = getTemperatureConfig(
     "task_prioritization",
-    moodCheckIn,
+    moodCheckIn
   );
   const prompt = taskPrioritizationPrompt({ user, moodCheckIn, tasks });
-  return sendToAllProviders(prompt, temperature, maxTokens);
+  return runAIOrchestrator(prompt, temperature, maxTokens);
 };
 
 /**
@@ -332,10 +517,17 @@ export const prioritizeTasks = async ({ user, moodCheckIn, tasks }) => {
 export const quickChat = async ({ user, message }) => {
   const { temperature, maxTokens } = getTemperatureConfig("quick_chat");
   const prompt = quickChatPrompt({ user, message });
-  return sendToAllProviders(prompt, temperature, maxTokens);
+  return runAIOrchestrator(prompt, temperature, maxTokens);
 };
 
 export default {
+  AI_MODE,
+  getProviderOrder,
+  validateDayPlanShape,
+  extractAndParseJSON,
+  executeFallback,
+  executeFanout,
+  runAIOrchestrator,
   sendToAllProviders,
   generateDailySuggestion,
   analyzeMoodPatterns,

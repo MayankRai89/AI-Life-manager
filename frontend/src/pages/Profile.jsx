@@ -54,6 +54,11 @@ export function Profile() {
   );
   const [notes, setNotes] = useState(user?.medicalReport?.notes || "");
 
+  // AI Personalization Consent (Off by default)
+  const [aiPersonalizationConsent, setAiPersonalizationConsent] = useState(
+    user?.consent?.aiPersonalization || false
+  );
+
   // Tag inputs
   const [newCondition, setNewCondition] = useState("");
   const [newAllergy, setNewAllergy] = useState("");
@@ -97,6 +102,12 @@ export function Profile() {
         medications,
         notes: notes.trim(),
         documents: user?.medicalReport?.documents || [],
+      },
+      consent: {
+        aiPersonalization: Boolean(aiPersonalizationConsent),
+        consentedAt: aiPersonalizationConsent
+          ? user?.consent?.consentedAt || new Date().toISOString()
+          : null,
       },
     };
 
@@ -304,6 +315,40 @@ export function Profile() {
             <p className="text-xs text-slate-500 mt-0.5">
               Helps your AI Life Manager align work sessions, reminders, and breaks around your physiological health needs.
             </p>
+          </div>
+
+          {/* AI Health Personalization Consent Toggle (Optional, Off by default) */}
+          <div className="rounded-2xl border border-teal-200/80 bg-gradient-to-r from-teal-50/70 to-emerald-50/40 p-4 transition-all">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-teal-600" />
+                  <span className="text-xs font-bold text-teal-900 uppercase tracking-wider">
+                    AI Personalization Consent (Optional)
+                  </span>
+                  <span className="rounded-full bg-teal-100 px-2 py-0.5 text-[10px] font-semibold text-teal-700">
+                    {aiPersonalizationConsent ? "Enabled" : "Off by Default"}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed max-w-xl">
+                  When enabled, non-identifying derived flags (e.g. &ldquo;avoid intense exercise&rdquo;, &ldquo;vegetarian preference&rdquo;) are factored into your daily schedule. Your raw medical conditions, medications, notes, and documents are <strong>never</strong> shared with any AI provider.
+                </p>
+                {aiPersonalizationConsent && user?.consent?.consentedAt && (
+                  <p className="text-[10px] text-teal-700 font-medium pt-1">
+                    Consented on: {new Date(user.consent.consentedAt).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+              <label className="relative inline-flex cursor-pointer items-center shrink-0 mt-1">
+                <input
+                  type="checkbox"
+                  checked={aiPersonalizationConsent}
+                  onChange={(e) => setAiPersonalizationConsent(e.target.checked)}
+                  className="peer sr-only"
+                />
+                <div className="h-6 w-11 rounded-full bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-teal-500/20 peer peer-checked:after:translate-x-full peer-checked:after:border-white peer-checked:bg-teal-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+              </label>
+            </div>
           </div>
 
           {/* Conditions */}
