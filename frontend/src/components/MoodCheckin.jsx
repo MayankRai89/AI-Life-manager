@@ -8,7 +8,16 @@ import { fetchAIDayPlan, fetchAIPrioritizedTasks } from "../redux/slices/aiSlice
 import { PRESET_MOODS } from "../mock/mockData";
 import { Button } from "./ui/Button";
 import { VoiceInputButton } from "./VoiceInputButton";
-import { Sparkles, Check, ChevronDown, ChevronUp, Smile, BatteryMedium, ShieldAlert } from "lucide-react";
+import {
+  Sparkles,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Smile,
+  BatteryMedium,
+  ShieldAlert,
+  Clock,
+} from "lucide-react";
 
 export function MoodCheckin() {
   const dispatch = useDispatch();
@@ -37,6 +46,7 @@ export function MoodCheckin() {
 
   const handleSubmit = async (e) => {
     e?.preventDefault();
+    const now = new Date();
     const payload = {
       mood: selectedMoodPreset,
       moodScore: activePreset.moodScore,
@@ -44,11 +54,14 @@ export function MoodCheckin() {
       stressLevel: Number(stressLevel),
       note: note.trim() || `Feeling ${activePreset.label} today.`,
       emotions: [selectedMoodPreset],
+      checkInTime: now.toISOString(),
+      time: now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
     };
 
     const res = await dispatch(submitMoodCheckin(payload));
     if (!res.error) {
-      setFeedbackMsg(`Mood logged as ${activePreset.label}. Updating your AI day plan...`);
+      setFeedbackMsg(`Mood logged as ${activePreset.label} at ${payload.time}. Updating your AI day plan...`);
       // Re-trigger AI daily suggestion for the new mood and task prioritization
       dispatch(fetchAIDayPlan(true));
       dispatch(fetchAIPrioritizedTasks());
@@ -78,7 +91,7 @@ export function MoodCheckin() {
         </div>
 
         {currentMood && (
-          <div className="flex items-center gap-2 rounded-2xl bg-white/90 border border-slate-200/70 px-3.5 py-1.5 shadow-xs">
+          <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-white/90 border border-slate-200/70 px-3.5 py-1.5 shadow-xs">
             <span className="text-xs text-slate-500">Current State:</span>
             <span className="text-xs font-bold text-teal-700 capitalize flex items-center gap-1.5">
               <span className="relative flex h-2 w-2">
@@ -87,6 +100,16 @@ export function MoodCheckin() {
               </span>
               {currentMood.mood}
             </span>
+            {(currentMood.time || currentMood.checkInTime) && (
+              <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1 pl-1 border-l border-slate-200">
+                <Clock className="h-3 w-3 text-slate-400" />
+                {currentMood.time ||
+                  new Date(currentMood.checkInTime).toLocaleTimeString([], {
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
+              </span>
+            )}
           </div>
         )}
       </div>
