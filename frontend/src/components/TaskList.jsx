@@ -402,7 +402,7 @@ export function TaskList({ showHeader = true, maxItems = null }) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Context or notes for this task..."
-              rows={3}
+              rows={2}
               className="w-full rounded-xl border border-slate-200 bg-white/80 p-3 text-xs text-slate-800 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
             />
           </div>
