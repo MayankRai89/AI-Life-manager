@@ -467,7 +467,7 @@ export function TaskList({ showHeader = true, maxItems = null }) {
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+          <div className="flex justify-end gap-2 pt-3 pb-1 border-t border-slate-100 sticky bottom-0 bg-white z-10 mt-3">
             <Button
               type="button"
               variant="outline"
