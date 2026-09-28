@@ -498,9 +498,19 @@ export function DayPlanCard({
           {currentMood && (
             <Badge
               variant="default"
-              className="capitalize text-xs font-semibold py-1 px-3 bg-teal-50 text-teal-800 border-teal-200"
+              className="capitalize text-xs font-semibold py-1 px-3 bg-teal-50 text-teal-800 border-teal-200 flex items-center gap-1.5"
             >
-              Rhythm: {currentMood.mood}
+              <span>Rhythm: {currentMood.mood}</span>
+              {(currentMood.time || currentMood.checkInTime) && (
+                <span className="text-teal-600 font-normal opacity-90 flex items-center gap-1 border-l border-teal-200/80 pl-1.5 ml-0.5 text-[11px]">
+                  <Clock className="h-3 w-3 text-teal-600" />
+                  {currentMood.time ||
+                    new Date(currentMood.checkInTime).toLocaleTimeString([], {
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                </span>
+              )}
             </Badge>
           )}
 
