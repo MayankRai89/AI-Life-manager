@@ -89,10 +89,6 @@ const moodCheckInSchema = new mongoose.Schema(
       default: Date.now,
       index: true,
     },
-    time: {
-      type: String,
-      trim: true,
-    },
     timeZone: {
       type: String,
       trim: true,
@@ -101,8 +97,28 @@ const moodCheckInSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   },
 );
+
+// Derive formatted time string from checkInTime and timeZone
+moodCheckInSchema.virtual("time").get(function () {
+  if (!this.checkInTime) return "";
+  try {
+    return new Intl.DateTimeFormat("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: this.timeZone || "UTC",
+    }).format(new Date(this.checkInTime));
+  } catch {
+    return new Date(this.checkInTime).toLocaleTimeString([], {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+});
 
 moodCheckInSchema.index({ userId: 1, checkInTime: -1 });
 

@@ -14,9 +14,6 @@ export const createMoodCheckIn = async (userId, moodData) => {
   const checkInDate = moodData.checkInTime
     ? new Date(moodData.checkInTime)
     : new Date();
-  const timeStr =
-    moodData.time ||
-    checkInDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   return await MoodCheckIn.create({
     userId,
@@ -24,7 +21,6 @@ export const createMoodCheckIn = async (userId, moodData) => {
     energyLevel: moodData.energyLevel !== undefined ? moodData.energyLevel : 5,
     stressLevel: moodData.stressLevel !== undefined ? moodData.stressLevel : 5,
     checkInTime: checkInDate,
-    time: timeStr,
     timeZone: moodData.timeZone || "UTC",
   });
 };

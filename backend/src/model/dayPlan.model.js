@@ -100,6 +100,10 @@ const dayPlanSchema = new mongoose.Schema(
       type: String,
       default: "ai",
     },
+    providerUsed: {
+      type: String,
+      default: "ai",
+    },
   },
   {
     timestamps: true,

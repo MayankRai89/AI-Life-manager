@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import validator from "validator";
 
 const userSchema = new mongoose.Schema(
   {
@@ -30,16 +31,13 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      match: [
-        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
-        "Please provide a valid email address",
-      ],
+      validate: [validator.isEmail, "Please provide a valid email address"],
       index: true,
     },
     password: {
       type: String,
       required: [true, "Password is required"],
-      minlength: [6, "Password must be at least 6 characters long"],
+      minlength: [8, "Password must be at least 8 characters long"],
       select: false,
     },
     phoneNumber: {
@@ -103,6 +101,16 @@ const userSchema = new mongoose.Schema(
           uploadedAt: { type: Date, default: Date.now },
         },
       ],
+    },
+
+    consent: {
+      aiPersonalization: {
+        type: Boolean,
+        default: false,
+      },
+      consentedAt: {
+        type: Date,
+      },
     },
   },
   {

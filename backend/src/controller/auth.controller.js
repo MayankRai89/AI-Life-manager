@@ -244,6 +244,7 @@ export const updateProfile = async (req, res) => {
       "timezone",
       "schedule",
       "medicalReport",
+      "consent",
     ];
 
     const updates = {};
@@ -256,6 +257,12 @@ export const updateProfile = async (req, res) => {
               : Number(req.body[key]);
         } else if (key === "phoneNumber") {
           updates[key] = req.body[key]?.trim() || undefined;
+        } else if (key === "consent") {
+          const aiPersonalization = Boolean(req.body.consent?.aiPersonalization);
+          updates.consent = {
+            aiPersonalization,
+            consentedAt: aiPersonalization ? new Date() : null,
+          };
         } else {
           updates[key] = req.body[key];
         }
