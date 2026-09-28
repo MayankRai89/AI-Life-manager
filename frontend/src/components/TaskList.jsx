@@ -287,9 +287,32 @@ export function TaskList({ showHeader = true, maxItems = null }) {
                       ) : null}
 
                       {(task.aiMetadata?.isAiSuggested || task.tags?.includes("ai_suggested")) && (
-                        <span className="inline-flex items-center gap-1 rounded-md bg-teal-50 px-2 py-0.5 text-[10px] font-semibold text-teal-700 border border-teal-200/60">
+                        <span
+                          title={
+                            task.aiMetadata?.moodCheckInTime
+                              ? `Generated from mood logged at ${new Date(
+                                  task.aiMetadata.moodCheckInTime
+                                ).toLocaleTimeString([], {
+                                  hour: "numeric",
+                                  minute: "2-digit",
+                                })}`
+                              : "Generated for your current mood"
+                          }
+                          className="inline-flex items-center gap-1 rounded-md bg-teal-50 px-2 py-0.5 text-[10px] font-semibold text-teal-700 border border-teal-200/60"
+                        >
                           <Sparkles className="h-2.5 w-2.5 text-teal-600" />
                           Mood Task
+                          {task.aiMetadata?.moodCheckInTime && (
+                            <span className="text-teal-600 font-normal opacity-80 text-[9px]">
+                              ·{" "}
+                              {new Date(
+                                task.aiMetadata.moodCheckInTime
+                              ).toLocaleTimeString([], {
+                                hour: "numeric",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          )}
                         </span>
                       )}
                     </div>
