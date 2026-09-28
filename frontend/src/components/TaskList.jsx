@@ -285,13 +285,20 @@ export function TaskList({ showHeader = true, maxItems = null }) {
                           showWhyAffordance={true}
                         />
                       ) : null}
+
+                      {(task.aiMetadata?.isAiSuggested || task.tags?.includes("ai_suggested")) && (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-teal-50 px-2 py-0.5 text-[10px] font-semibold text-teal-700 border border-teal-200/60">
+                          <Sparkles className="h-2.5 w-2.5 text-teal-600" />
+                          Mood Task
+                        </span>
+                      )}
                     </div>
 
                     {/* AI Reason Subtitle directly under task for trust-building */}
-                    {task.aiReason && !isCompleted && (
+                    {(task.aiReason || task.aiMetadata?.aiSuggestionReason) && !isCompleted && (
                       <p className="text-xs text-teal-800/90 font-medium flex items-center gap-1.5 pt-0.5">
                         <Sparkles className="h-3.5 w-3.5 text-teal-600 shrink-0" />
-                        <span>{task.aiReason}</span>
+                        <span>{task.aiReason || task.aiMetadata?.aiSuggestionReason}</span>
                       </p>
                     )}
 

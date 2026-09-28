@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAIDayPlan } from "../redux/slices/aiSlice";
+import { addTask } from "../redux/slices/taskSlice";
 import {
   Sparkles,
   RefreshCw,
@@ -18,6 +19,7 @@ import {
   Wind,
   Coffee,
   Check,
+  Plus,
 } from "lucide-react";
 import { Button } from "./ui/Button";
 import { Badge } from "./ui/Badge";
@@ -337,6 +339,8 @@ export function DayPlanCard({
   const { tasks } = useSelector((state) => state?.tasks) || { tasks: [] };
 
   const [isWhyExpanded, setIsWhyExpanded] = useState(false);
+  const [savingTask, setSavingTask] = useState({});
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState("");
 
   const activePlan = propPlan || reduxAI.dayPlan || {};
   const isLoading =
@@ -347,6 +351,94 @@ export function DayPlanCard({
       propOnRefresh();
     } else {
       dispatch(fetchAIDayPlan(true));
+    }
+  };
+
+  const isTaskSaved = (title) => {
+    if (!title || !tasks) return false;
+    return tasks.some(
+      (t) => t.title?.toLowerCase().trim() === title.toLowerCase().trim()
+    );
+  };
+
+  const handleSaveToTasks = async (taskItem) => {
+    setSavingTask((prev) => ({ ...prev, [taskItem.title]: true }));
+    try {
+      const payload = {
+        title: taskItem.title.trim(),
+        description: taskItem.action
+          ? `${taskItem.action}${taskItem.reason ? `\n\nAI Insight: ${taskItem.reason}` : ""}`
+          : taskItem.reason || "Generated for current mood state",
+        category: "work",
+        priority: "medium",
+        dueDate: new Date().toISOString().split("T")[0],
+        dueTime: taskItem.timeSlot?.toLowerCase().includes("morning")
+          ? "10:00"
+          : taskItem.timeSlot?.toLowerCase().includes("afternoon")
+          ? "14:00"
+          : "17:00",
+        estimatedDuration: 30,
+        aiMetadata: {
+          isAiSuggested: true,
+          aiSuggestionReason:
+            taskItem.reason || `Generated for ${currentMood?.mood || "current"} mood`,
+          energyFit: "medium_energy",
+        },
+        tags: ["ai_suggested", currentMood?.mood || "mood_plan"],
+      };
+
+      await dispatch(addTask(payload)).unwrap();
+      setSaveSuccessMsg(`Added "${taskItem.title}" to Action Items!`);
+      setTimeout(() => setSaveSuccessMsg(""), 3500);
+    } catch (err) {
+      console.error("Failed to save AI task:", err);
+    } finally {
+      setSavingTask((prev) => ({ ...prev, [taskItem.title]: false }));
+    }
+  };
+
+  const handleSaveAllToTasks = async (focusTasks) => {
+    const unsaved = (focusTasks || []).filter((t) => !isTaskSaved(t.title));
+    if (!unsaved.length) {
+      setSaveSuccessMsg("All focus tasks are already saved in your Action Items!");
+      setTimeout(() => setSaveSuccessMsg(""), 3000);
+      return;
+    }
+
+    setSaveSuccessMsg(`Saving ${unsaved.length} tasks to Action Items...`);
+    for (const taskItem of unsaved) {
+      await handleSaveToTasks(taskItem);
+    }
+    setSaveSuccessMsg(`Saved ${unsaved.length} AI mood tasks to your Action Items database!`);
+    setTimeout(() => setSaveSuccessMsg(""), 4000);
+  };
+
+  const handleSaveWellnessAsTask = async (act) => {
+    setSavingTask((prev) => ({ ...prev, [act.title]: true }));
+    try {
+      const payload = {
+        title: act.title.trim(),
+        description: act.description || "Mindful wellness moment",
+        category: "health",
+        priority: "low",
+        dueDate: new Date().toISOString().split("T")[0],
+        dueTime: "15:00",
+        estimatedDuration: 15,
+        aiMetadata: {
+          isAiSuggested: true,
+          aiSuggestionReason: `Wellness moment for ${currentMood?.mood || "current"} mood`,
+          energyFit: "low_energy",
+        },
+        tags: ["wellness", "ai_suggested", currentMood?.mood || "mood_plan"],
+      };
+
+      await dispatch(addTask(payload)).unwrap();
+      setSaveSuccessMsg(`Added wellness task "${act.title}" to Action Items!`);
+      setTimeout(() => setSaveSuccessMsg(""), 3500);
+    } catch (err) {
+      console.error("Failed to save wellness task:", err);
+    } finally {
+      setSavingTask((prev) => ({ ...prev, [act.title]: false }));
     }
   };
 
@@ -366,6 +458,19 @@ export function DayPlanCard({
         className
       )}
     >
+      {/* Save Success Banner */}
+      {saveSuccessMsg && (
+        <div className="mb-4 rounded-2xl bg-teal-600 text-white px-4 py-3 text-xs font-semibold flex items-center justify-between shadow-sm animate-in fade-in duration-200">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-teal-200" />
+            <span>{saveSuccessMsg}</span>
+          </div>
+          <span className="text-[11px] text-teal-100 font-medium">
+            Synced to Action Items
+          </span>
+        </div>
+      )}
+
       {/* Card Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-5">
         <div className="flex items-center gap-3">
@@ -486,56 +591,98 @@ export function DayPlanCard({
 
       {/* Suggested Focus Tasks Sequence */}
       <div className="space-y-3 pt-1">
-        <div className="flex items-center justify-between">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-            <Clock className="h-3.5 w-3.5 text-slate-400" />
-            Top Focus Tasks for Today
-          </h4>
-          <span className="text-[11px] text-slate-400 font-medium">
-            Take one at a time
-          </span>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+              <Clock className="h-3.5 w-3.5 text-slate-400" />
+              Top Focus Tasks for Today
+            </h4>
+            <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
+              Take one at a time
+            </span>
+          </div>
+
+          {parsed.focusTasks && parsed.focusTasks.length > 0 && (
+            <button
+              type="button"
+              onClick={() => handleSaveAllToTasks(parsed.focusTasks)}
+              className="text-[11px] font-semibold text-teal-700 hover:text-teal-800 bg-teal-50 hover:bg-teal-100 border border-teal-200/80 px-2.5 py-1 rounded-xl transition flex items-center gap-1 cursor-pointer"
+            >
+              <Plus className="h-3 w-3" />
+              Save All to Action Items
+            </button>
+          )}
         </div>
 
         {parsed.focusTasks && parsed.focusTasks.length > 0 ? (
           <div className="space-y-2.5">
-            {parsed.focusTasks.map((taskItem, idx) => (
-              <div
-                key={taskItem.title + idx}
-                className="group relative flex items-start gap-3.5 rounded-2xl border border-slate-200/80 bg-white/90 p-4 transition-all duration-200 hover:border-teal-200 hover:bg-white hover:shadow-xs"
-              >
-                {/* Step indicator */}
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-teal-50 font-bold text-xs text-teal-700 border border-teal-200/60">
-                  {idx + 1}
-                </div>
+            {parsed.focusTasks.map((taskItem, idx) => {
+              const isSaved = isTaskSaved(taskItem.title);
+              const isSaving = savingTask[taskItem.title];
 
-                <div className="flex-1 min-w-0 space-y-1">
-                  <div className="flex flex-wrap items-center justify-between gap-1">
-                    <h5 className="text-sm font-bold text-slate-800 break-words">
-                      {taskItem.title}
-                    </h5>
-                    {taskItem.timeSlot && (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
-                        <Clock className="h-2.5 w-2.5 text-slate-400" />
-                        {taskItem.timeSlot}
-                      </span>
-                    )}
+              return (
+                <div
+                  key={taskItem.title + idx}
+                  className="group relative flex flex-col sm:flex-row sm:items-start justify-between gap-3.5 rounded-2xl border border-slate-200/80 bg-white/90 p-4 transition-all duration-200 hover:border-teal-200 hover:bg-white hover:shadow-xs"
+                >
+                  <div className="flex items-start gap-3.5 flex-1 min-w-0">
+                    {/* Step indicator */}
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-teal-50 font-bold text-xs text-teal-700 border border-teal-200/60">
+                      {idx + 1}
+                    </div>
+
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex flex-wrap items-center justify-between gap-1">
+                        <h5 className="text-sm font-bold text-slate-800 break-words">
+                          {taskItem.title}
+                        </h5>
+                        {taskItem.timeSlot && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                            <Clock className="h-2.5 w-2.5 text-slate-400" />
+                            {taskItem.timeSlot}
+                          </span>
+                        )}
+                      </div>
+
+                      {taskItem.action && (
+                        <p className="text-xs text-slate-600 leading-relaxed font-normal">
+                          {taskItem.action}
+                        </p>
+                      )}
+
+                      {taskItem.reason && (
+                        <div className="pt-1 flex items-center gap-1.5 text-[11px] text-teal-800/90 font-medium">
+                          <Sparkles className="h-3 w-3 text-teal-600 shrink-0" />
+                          <span>{taskItem.reason}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  {taskItem.action && (
-                    <p className="text-xs text-slate-600 leading-relaxed font-normal">
-                      {taskItem.action}
-                    </p>
-                  )}
-
-                  {taskItem.reason && (
-                    <div className="pt-1 flex items-center gap-1.5 text-[11px] text-teal-800/90 font-medium">
-                      <Sparkles className="h-3 w-3 text-teal-600 shrink-0" />
-                      <span>{taskItem.reason}</span>
-                    </div>
-                  )}
+                  {/* Add to Action Items button */}
+                  <div className="flex items-center self-end sm:self-center shrink-0 pt-1 sm:pt-0">
+                    {isSaved ? (
+                      <span className="inline-flex items-center gap-1 rounded-xl bg-teal-50 border border-teal-200/80 px-2.5 py-1.5 text-[11px] font-semibold text-teal-700">
+                        <Check className="h-3.5 w-3.5 text-teal-600" />
+                        In Action Items
+                      </span>
+                    ) : (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        isLoading={isSaving}
+                        onClick={() => handleSaveToTasks(taskItem)}
+                        className="rounded-xl border-teal-200/80 bg-teal-50/70 text-teal-700 hover:bg-teal-100 text-xs font-semibold py-1.5 px-3 h-auto"
+                      >
+                        <Plus className="h-3.5 w-3.5 mr-1 text-teal-600" />
+                        Add to Tasks
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-center text-xs text-slate-500">
@@ -556,21 +703,45 @@ export function DayPlanCard({
             {parsed.wellnessActivities.map((act, idx) => {
               const isMove = act.type === "move";
               const ActivityIcon = isMove ? Footprints : Wind;
+              const isSaved = isTaskSaved(act.title);
+              const isSaving = savingTask[act.title];
+
               return (
                 <div
                   key={idx}
-                  className="rounded-2xl border border-teal-100 bg-gradient-to-br from-teal-50/60 to-white p-3.5 flex items-start gap-3"
+                  className="rounded-2xl border border-teal-100 bg-gradient-to-br from-teal-50/60 to-white p-3.5 flex items-start justify-between gap-3"
                 >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-teal-100 text-teal-700">
-                    <ActivityIcon className="h-4 w-4" />
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-teal-100 text-teal-700">
+                      <ActivityIcon className="h-4 w-4" />
+                    </div>
+                    <div className="space-y-0.5 min-w-0">
+                      <h6 className="text-xs font-bold text-slate-800">
+                        {act.title}
+                      </h6>
+                      <p className="text-[11px] text-slate-600 leading-snug">
+                        {act.description}
+                      </p>
+                    </div>
                   </div>
-                  <div className="space-y-0.5 min-w-0">
-                    <h6 className="text-xs font-bold text-slate-800">
-                      {act.title}
-                    </h6>
-                    <p className="text-[11px] text-slate-600 leading-snug">
-                      {act.description}
-                    </p>
+
+                  <div className="shrink-0 self-center">
+                    {isSaved ? (
+                      <span className="text-[10px] font-semibold text-teal-700 flex items-center gap-1 bg-teal-50 px-2 py-1 rounded-lg">
+                        <Check className="h-3 w-3" />
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={isSaving}
+                        onClick={() => handleSaveWellnessAsTask(act)}
+                        className="text-[11px] font-semibold text-teal-700 hover:text-teal-800 bg-white hover:bg-teal-50 border border-teal-200/80 px-2 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer"
+                        title="Add this wellness activity to your action items"
+                      >
+                        <Plus className="h-3 w-3" />
+                        Task
+                      </button>
+                    )}
                   </div>
                 </div>
               );
