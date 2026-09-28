@@ -89,6 +89,15 @@ const moodCheckInSchema = new mongoose.Schema(
       default: Date.now,
       index: true,
     },
+    time: {
+      type: String,
+      trim: true,
+    },
+    timeZone: {
+      type: String,
+      trim: true,
+      default: "UTC",
+    },
   },
   {
     timestamps: true,

@@ -71,6 +71,12 @@ const dayPlanSchema = new mongoose.Schema(
       moodScore: Number,
       energyLevel: Number,
       stressLevel: Number,
+      checkInTime: Date,
+      time: String,
+    },
+    requestedAt: {
+      type: Date,
+      default: Date.now,
     },
     summary: {
       type: String,

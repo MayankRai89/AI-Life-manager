@@ -154,6 +154,13 @@ const taskSchema = new mongoose.Schema(
         start: String,
         end: String,
       },
+      moodCheckInTime: {
+        type: Date,
+      },
+      moodSnapshot: {
+        type: String,
+        trim: true,
+      },
     },
     completedAt: {
       type: Date,

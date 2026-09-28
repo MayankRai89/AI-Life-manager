@@ -100,7 +100,17 @@ export const getDailySuggestion = asyncHandler(async (req, res) => {
         moodScore: latestMood.moodScore,
         energyLevel: latestMood.energyLevel,
         stressLevel: latestMood.stressLevel,
+        checkInTime: latestMood.checkInTime || latestMood.createdAt || new Date(),
+        time:
+          latestMood.time ||
+          new Date(
+            latestMood.checkInTime || latestMood.createdAt || Date.now()
+          ).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
       },
+      requestedAt: new Date(),
       summary,
       focusTasks,
       wellnessActivities,

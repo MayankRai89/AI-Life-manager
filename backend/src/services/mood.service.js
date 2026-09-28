@@ -11,12 +11,21 @@ export const createMoodCheckIn = async (userId, moodData) => {
     throw new AppError("Mood and mood score (1-10) are required", 400);
   }
 
+  const checkInDate = moodData.checkInTime
+    ? new Date(moodData.checkInTime)
+    : new Date();
+  const timeStr =
+    moodData.time ||
+    checkInDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
   return await MoodCheckIn.create({
     userId,
     ...moodData,
     energyLevel: moodData.energyLevel !== undefined ? moodData.energyLevel : 5,
     stressLevel: moodData.stressLevel !== undefined ? moodData.stressLevel : 5,
-    checkInTime: moodData.checkInTime || new Date(),
+    checkInTime: checkInDate,
+    time: timeStr,
+    timeZone: moodData.timeZone || "UTC",
   });
 };
 
