@@ -383,6 +383,8 @@ export function DayPlanCard({
           aiSuggestionReason:
             taskItem.reason || `Generated for ${currentMood?.mood || "current"} mood`,
           energyFit: "medium_energy",
+          moodCheckInTime: currentMood?.checkInTime || new Date().toISOString(),
+          moodSnapshot: currentMood?.mood || "calm",
         },
         tags: ["ai_suggested", currentMood?.mood || "mood_plan"],
       };
@@ -428,6 +430,8 @@ export function DayPlanCard({
           isAiSuggested: true,
           aiSuggestionReason: `Wellness moment for ${currentMood?.mood || "current"} mood`,
           energyFit: "low_energy",
+          moodCheckInTime: currentMood?.checkInTime || new Date().toISOString(),
+          moodSnapshot: currentMood?.mood || "calm",
         },
         tags: ["wellness", "ai_suggested", currentMood?.mood || "mood_plan"],
       };
