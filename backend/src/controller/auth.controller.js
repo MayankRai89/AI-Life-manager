@@ -56,18 +56,27 @@ export const register = async (req, res) => {
         });
       }
     }
-    const newUser = await User.create({
-      username,
-      name,
-      email,
+    const userPayload = {
+      username: username.trim().toLowerCase(),
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
       password,
-      phoneNumber,
-      age,
-      gender,
       timezone: timezone || "UTC",
       schedule: schedule || {},
       medicalReport: medicalReport || {},
-    });
+    };
+
+    if (phoneNumber && phoneNumber.trim()) {
+      userPayload.phoneNumber = phoneNumber.trim();
+    }
+    if (age !== undefined && age !== null && age !== "") {
+      userPayload.age = Number(age);
+    }
+    if (gender) {
+      userPayload.gender = gender;
+    }
+
+    const newUser = await User.create(userPayload);
 
     const token = generateToken(newUser._id);
 
@@ -219,3 +228,70 @@ export const getMe = async (req, res) => {
     });
   }
 };
+
+/**
+ * @desc    Update user profile and preferences
+ * @route   PUT /api/auth/profile
+ * @access  Private
+ */
+export const updateProfile = async (req, res) => {
+  try {
+    const allowedUpdates = [
+      "name",
+      "phoneNumber",
+      "age",
+      "gender",
+      "timezone",
+      "schedule",
+      "medicalReport",
+    ];
+
+    const updates = {};
+    for (const key of allowedUpdates) {
+      if (req.body[key] !== undefined) {
+        if (key === "age") {
+          updates[key] =
+            req.body[key] === "" || req.body[key] === null
+              ? undefined
+              : Number(req.body[key]);
+        } else if (key === "phoneNumber") {
+          updates[key] = req.body[key]?.trim() || undefined;
+        } else {
+          updates[key] = req.body[key];
+        }
+      }
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      { $set: updates },
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).select("-password");
+
+    return res.status(200).json({
+      status: "success",
+      message: "Profile updated successfully",
+      data: {
+        user: updatedUser,
+      },
+    });
+  } catch (error) {
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map((err) => err.message);
+      return res.status(400).json({
+        status: "error",
+        message: messages.join(", "),
+      });
+    }
+
+    console.error("Update Profile Error:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Error updating profile. Please try again.",
+    });
+  }
+};
+

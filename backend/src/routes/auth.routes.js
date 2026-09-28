@@ -4,6 +4,7 @@ import {
   login,
   logout,
   getMe,
+  updateProfile,
 } from "../controller/auth.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
 import {
@@ -19,5 +20,6 @@ router.post("/login", validate(loginValidationRules), login);
 router.post("/logout", logout);
 
 router.get("/me", protect, getMe);
+router.put("/profile", protect, updateProfile);
 
 export default router;

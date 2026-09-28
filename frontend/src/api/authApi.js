@@ -20,6 +20,11 @@ export const authApi = {
     const response = await apiClient.get("/auth/me");
     return response.data;
   },
+
+  updateProfile: async (userData) => {
+    const response = await apiClient.put("/auth/profile", userData);
+    return response.data;
+  },
 };
 
 export default authApi;

@@ -66,6 +66,21 @@ export const fetchCurrentUser = createAsyncThunk(
   }
 );
 
+export const saveUserProfile = createAsyncThunk(
+  "auth/saveUserProfile",
+  async (profileData, { rejectWithValue }) => {
+    try {
+      const data = await authApi.updateProfile(profileData);
+      const user = data.data?.user || data.user || profileData;
+      localStorage.setItem("ai_life_user", JSON.stringify(user));
+      return user;
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || "Failed to update profile";
+      return rejectWithValue(msg);
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -124,6 +139,17 @@ const authSlice = createSlice({
           state.user = action.payload.user;
           state.isAuthenticated = true;
         }
+      })
+      // Save User Profile
+      .addCase(saveUserProfile.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(saveUserProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = { ...state.user, ...action.payload };
+      })
+      .addCase(saveUserProfile.rejected, (state, action) => {
+        state.loading = false;
       });
   },
 });
