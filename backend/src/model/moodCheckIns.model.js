@@ -24,6 +24,8 @@ const moodCheckInSchema = new mongoose.Schema(
           "sad",
           "angry",
           "overwhelmed",
+          "motivated",
+          "content",
         ],
         message: "{VALUE} is not a valid mood",
       },
@@ -66,6 +68,16 @@ const moodCheckInSchema = new mongoose.Schema(
       type: String,
       trim: true,
       maxlength: [1000, "Note cannot exceed 1000 characters"],
+    },
+    capacityLevel: {
+      type: String,
+      enum: ["high", "normal", "light"],
+      default: "normal",
+    },
+    derivedContext: {
+      type: String,
+      trim: true,
+      maxlength: 200,
     },
     aiInsights: {
       sentiment: {

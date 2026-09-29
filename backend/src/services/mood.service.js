@@ -1,5 +1,7 @@
 import MoodCheckIn from "../model/moodCheckins.model.js";
 import { AppError } from "../middleware/errorHandler.middleware.js";
+import logger from "../utils/Logger.js";
+import { getDerivedContext } from "./ai/ai.service.js";
 
 /**
  * Record a new mood check-in
@@ -15,14 +17,31 @@ export const createMoodCheckIn = async (userId, moodData) => {
     ? new Date(moodData.checkInTime)
     : new Date();
 
-  return await MoodCheckIn.create({
+  const checkIn = await MoodCheckIn.create({
     userId,
     ...moodData,
     energyLevel: moodData.energyLevel !== undefined ? moodData.energyLevel : 5,
     stressLevel: moodData.stressLevel !== undefined ? moodData.stressLevel : 5,
+    capacityLevel: moodData.capacityLevel || "normal",
     checkInTime: checkInDate,
     timeZone: moodData.timeZone || "UTC",
   });
+
+  // Fire-and-forget: extract derived context from free-text note.
+  // Never blocks the response — failures are logged only.
+  if (checkIn.note && checkIn.note.trim()) {
+    getDerivedContext(checkIn.note)
+      .then(async (derivedContext) => {
+        if (derivedContext) {
+          await MoodCheckIn.findByIdAndUpdate(checkIn._id, { derivedContext });
+        }
+      })
+      .catch((err) =>
+        logger.warn(`[MoodService] derivedContext update failed for ${checkIn._id}: ${err.message}`)
+      );
+  }
+
+  return checkIn;
 };
 
 /**

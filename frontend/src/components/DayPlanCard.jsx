@@ -118,7 +118,12 @@ export function parseDayPlan(rawPlan, tasks = []) {
 
     return {
       summary: cleanText(textToParse),
-      focusTasks: resolvedTasks,
+      focusTasks:
+        resolvedTasks.length > 0
+          ? resolvedTasks
+          : Array.isArray(rawPlan.focusTasks) && rawPlan.focusTasks.length > 0
+          ? rawPlan.focusTasks
+          : [],
       wellnessActivities: rawPlan.wellnessActivities || [],
       notes: cleanText(rawPlan.notes || rawPlan.moodAssessment),
       forwardLooking: null,

@@ -13,7 +13,8 @@
 export const SYSTEM_PERSONA = `You are an empathetic and intelligent AI Life Manager assistant.
 Your role is to help users optimize their productivity, mental wellness, and daily planning
 based on real data about their mood, tasks, and schedule. Always be concise, kind, and actionable.
-Give wellness and productivity suggestions only. Never give medical advice, diagnosis, or medication guidance. If health topics come up, suggest consulting a professional.`;
+Give wellness and productivity suggestions only. Never give medical advice, diagnosis, or medication guidance. If health topics come up, suggest consulting a professional.
+When interpreting a user's free-text note, extract only productivity-relevant signals (energy, focus, stress triggers, schedule conflicts). Never infer or name a medical condition, sleep disorder, or mental health diagnosis, even if the note describes symptoms.`;
 
 /**
  * Convert user medicalReport into short non-identifying flags.
@@ -99,16 +100,39 @@ export const buildHealthFlags = (user) => {
 };
 
 /**
+ * @template ContextExtraction
+ * @desc     Extracts a short productivity-relevant summary from a free-text mood note.
+ *           Returns { derivedContext: "short phrase or empty string" }
+ * @param    {string} note - the user's raw free-text mood note
+ * @returns  {{ system: string, user: string }}
+ */
+export const buildContextExtractionPrompt = (note) => {
+  const system = `You extract short, factual, productivity-relevant context from a user's free-text note about how they're feeling.
+You identify only concrete factors mentioned (sleep quality, specific stressors, deadlines, physical state, focus ability) — you do not diagnose, infer conditions, or add anything not stated. Keep the output to a single short phrase, under 12 words. You always respond with valid JSON only.
+When interpreting a user's free-text note, extract only productivity-relevant signals (energy, focus, stress triggers, schedule conflicts). Never infer or name a medical condition, sleep disorder, or mental health diagnosis, even if the note describes symptoms.`;
+
+  const user = `Note: "${note}"
+
+Extract the key productivity-relevant factors as a short phrase.
+If the note contains nothing concrete and relevant (e.g. just restates the mood), return an empty string.
+
+Respond with JSON in exactly this shape:
+{ "derivedContext": "short phrase or empty string" }`;
+
+  return { system, user };
+};
+
+/**
  * @template DailySuggestion
  * @desc     Generates a personalized day plan based on mood + tasks
  * @param    {Object} user         - { name, schedule, medicalReport, consent }
- * @param    {Object} moodCheckIn  - { mood, moodScore, energyLevel, stressLevel, triggers, note }
+ * @param    {Object} moodCheckIn  - { mood, moodScore, energyLevel, stressLevel, triggers, note, capacityLevel, derivedContext }
  * @param    {Array}  tasks        - array of task documents
  * @returns  {string}
  */
 export const dailySuggestionPrompt = ({ user, moodCheckIn, tasks }) => {
   const { name, schedule } = user;
-  const { mood, moodScore, energyLevel, stressLevel, triggers, note } =
+  const { mood, moodScore, energyLevel, stressLevel, triggers, note, capacityLevel, derivedContext } =
     moodCheckIn;
 
   const pendingTasks = tasks
@@ -116,7 +140,7 @@ export const dailySuggestionPrompt = ({ user, moodCheckIn, tasks }) => {
     .slice(0, 6)
     .map(
       (t) =>
-        `  - "${t.title}" [${t.priority} priority | ${t.category}${
+        `  - [ID: ${t._id}] "${t.title}" [${t.priority} priority | ${t.category}${
           t.dueDate
             ? ` | due ${new Date(t.dueDate).toLocaleDateString()}`
             : ""
@@ -141,6 +165,8 @@ export const dailySuggestionPrompt = ({ user, moodCheckIn, tasks }) => {
 - Mood: **${mood}** (Score: ${moodScore}/10)
 - Energy Level: ${energyLevel}/10
 - Stress Level: ${stressLevel}/10
+- Today's Capacity: ${capacityLevel || "normal"}
+${derivedContext ? `- Context: ${derivedContext}` : ""}
 ${triggers?.length ? `- Active Triggers: ${triggers.join(", ")}` : ""}
 ${note ? `- Personal Note: "${note}"` : ""}
 
@@ -158,7 +184,7 @@ ${pendingTasks || "  No pending tasks"}
 Respond ONLY with a valid JSON object (no markdown fences, no raw headers, no extra commentary):
 {
   "summary": "Warm, conversational 1-2 sentence message from a thoughtful friend acknowledging ${name}'s mood and pacing the day. Avoid robotic jargon.",
-  "orderedTaskIds": [],
+  "orderedTaskIds": [], // String array of matching task IDs from Pending Tasks (or empty array [] if no pending tasks)
   "focusTasks": [
     {
       "title": "Concise task title",

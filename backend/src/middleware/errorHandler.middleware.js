@@ -21,7 +21,9 @@ const handleDuplicateFieldsDB = (err) => {
 };
 
 const handleValidationErrorDB = (err) => {
-  const errors = Object.values(err.errors).map((el) => el.message);
+  const errors = err.errors
+    ? Object.values(err.errors).map((el) => el.message)
+    : [err.message];
   const message = `Invalid input: ${errors.join(". ")}`;
   return new AppError(message, 400);
 };
@@ -33,8 +35,12 @@ const handleJWTExpiredError = () =>
   new AppError("Your token has expired. Please log in again.", 401);
 
 export const errorHandler = (err, req, res, next) => {
+  if (err.name === "ValidationError" && (!err.statusCode || err.statusCode === 500)) {
+    err.statusCode = 400;
+  }
+
   err.statusCode = err.statusCode || 500;
-  err.status = err.status || "error";
+  err.status = err.status || (`${err.statusCode}`.startsWith("4") ? "fail" : "error");
 
   let error = { ...err, message: err.message, name: err.name };
 
@@ -44,14 +50,18 @@ export const errorHandler = (err, req, res, next) => {
   if (err.name === "JsonWebTokenError") error = handleJWTError();
   if (err.name === "TokenExpiredError") error = handleJWTExpiredError();
 
+  const statusCode = error.statusCode || err.statusCode || 500;
+  const status = error.status || (`${statusCode}`.startsWith("4") ? "fail" : "error");
+  const message = error.message || "Internal Server Error";
+
   const isDev = process.env.NODE_ENV === "development";
 
-  return res.status(error.statusCode || 500).json({
-    status: error.status || "error",
-    message: error.message || "Internal Server Error",
+  return res.status(statusCode).json({
+    statusCode,
+    status,
+    message,
     ...(isDev && {
       stack: err.stack,
-      error: err,
     }),
   });
 };

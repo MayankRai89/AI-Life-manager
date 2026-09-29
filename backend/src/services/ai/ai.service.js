@@ -5,6 +5,7 @@ import {
   moodAnalysisPrompt,
   taskPrioritizationPrompt,
   quickChatPrompt,
+  buildContextExtractionPrompt,
 } from "./promptTemplet.js";
 
 /** Per-provider fetch timeout — prevents one slow provider from blocking fallback/fanout */
@@ -520,6 +521,47 @@ export const quickChat = async ({ user, message }) => {
   return runAIOrchestrator(prompt, temperature, maxTokens);
 };
 
+/**
+ * Extract a short productivity-relevant context summary from a free-text mood note.
+ * Uses low temperature (0.2) for consistency.
+ * Never throws — returns empty string on any failure so the calling check-in always succeeds.
+ *
+ * @param {string} note - raw free-text mood note
+ * @returns {Promise<string>} derivedContext phrase or empty string
+ */
+export const getDerivedContext = async (note) => {
+  if (!note || !note.trim()) return "";
+  try {
+    const { system, user } = buildContextExtractionPrompt(note.trim());
+    // Combine system + user prompt into a single string the orchestrator can send
+    const combinedPrompt = `${system}\n\n${user}`;
+    const result = await executeFallback(combinedPrompt, 0.2, 150);
+    const raw = result.data || result.text || "";
+    // result.data may already be parsed; if not, parse it
+    let parsed;
+    if (typeof raw === "object" && raw !== null) {
+      parsed = raw;
+    } else {
+      try {
+        const cleaned = String(raw)
+          .replace(/^```json\s*/i, "")
+          .replace(/^```\s*/i, "")
+          .replace(/```\s*$/i, "")
+          .trim();
+        parsed = JSON.parse(cleaned);
+      } catch {
+        return "";
+      }
+    }
+    return typeof parsed?.derivedContext === "string"
+      ? parsed.derivedContext.trim().slice(0, 200)
+      : "";
+  } catch (err) {
+    logger.warn(`[AI] getDerivedContext failed (non-blocking): ${err.message}`);
+    return "";
+  }
+};
+
 export default {
   AI_MODE,
   getProviderOrder,
@@ -533,4 +575,5 @@ export default {
   analyzeMoodPatterns,
   prioritizeTasks,
   quickChat,
+  getDerivedContext,
 };

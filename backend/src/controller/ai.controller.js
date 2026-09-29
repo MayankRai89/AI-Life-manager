@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import * as aiService from "../services/ai/ai.service.js";
 import * as moodService from "../services/mood.service.js";
 import * as taskService from "../services/task.service.js";
@@ -103,7 +104,7 @@ export const getDailySuggestion = asyncHandler(async (req, res) => {
 
   const result = await aiService.generateDailySuggestion({
     user,
-    moodCheckIn: latestMood,
+    moodCheckIn: latestMood,   // already contains capacityLevel + derivedContext from schema
     tasks,
   });
 
@@ -125,10 +126,70 @@ export const getDailySuggestion = asyncHandler(async (req, res) => {
   }
 
   const summary = parsedPlan?.summary || result.text || "";
-  const focusTasks = parsedPlan?.focusTasks || [];
-  const wellnessActivities = parsedPlan?.wellnessActivities || [];
+  const focusTasks = Array.isArray(parsedPlan?.focusTasks)
+    ? parsedPlan.focusTasks
+    : [];
+  const wellnessActivities = Array.isArray(parsedPlan?.wellnessActivities)
+    ? parsedPlan.wellnessActivities
+    : [];
   const notes = parsedPlan?.notes || "";
-  const orderedTaskIds = parsedPlan?.orderedTaskIds || [];
+
+  // Robust parsing & validation of orderedTaskIds to prevent CastError
+  let rawOrderedTaskIds = parsedPlan?.orderedTaskIds || [];
+  if (typeof rawOrderedTaskIds === "string") {
+    try {
+      rawOrderedTaskIds = JSON.parse(rawOrderedTaskIds.replace(/'/g, '"'));
+    } catch {
+      rawOrderedTaskIds = [];
+    }
+  }
+  if (!Array.isArray(rawOrderedTaskIds)) {
+    rawOrderedTaskIds = [];
+  }
+
+  // Flatten in case of nested arrays or array strings inside an array element
+  const flattenedTaskIds = [];
+  for (const item of rawOrderedTaskIds) {
+    if (typeof item === "string" && item.trim().startsWith("[")) {
+      try {
+        const parsedNested = JSON.parse(item.replace(/'/g, '"'));
+        if (Array.isArray(parsedNested)) {
+          flattenedTaskIds.push(...parsedNested);
+          continue;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    flattenedTaskIds.push(item);
+  }
+
+  const validTaskIds = new Set(tasks.map((t) => t._id.toString()));
+  const titleToIdMap = new Map(
+    tasks.map((t) => [t.title?.toLowerCase().trim(), t._id])
+  );
+
+  const orderedTaskIds = flattenedTaskIds
+    .map((item) => {
+      if (!item) return null;
+      const strItem = typeof item === "string" ? item.trim() : item.toString();
+      // Match existing task ID directly
+      if (mongoose.Types.ObjectId.isValid(strItem) && validTaskIds.has(strItem)) {
+        return strItem;
+      }
+      // Match by title
+      const matchedId = titleToIdMap.get(strItem.toLowerCase());
+      if (matchedId) {
+        return matchedId.toString();
+      }
+      // If it's a valid ObjectId in general
+      if (mongoose.Types.ObjectId.isValid(strItem)) {
+        return strItem;
+      }
+      return null;
+    })
+    .filter(Boolean);
+
   const providerUsed = result.providerUsed || result.provider || "ai";
 
   // 4. Save or update the plan in MongoDB linked to this mood check-in
@@ -143,6 +204,8 @@ export const getDailySuggestion = asyncHandler(async (req, res) => {
         moodScore: latestMood.moodScore,
         energyLevel: latestMood.energyLevel,
         stressLevel: latestMood.stressLevel,
+        capacityLevel: latestMood.capacityLevel || "normal",
+        derivedContext: latestMood.derivedContext || "",
         checkInTime: latestMood.checkInTime || latestMood.createdAt || new Date(),
         time: latestMood.time || "",
       },
