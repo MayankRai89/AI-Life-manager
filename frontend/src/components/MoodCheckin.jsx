@@ -13,11 +13,43 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
-  Smile,
   BatteryMedium,
   ShieldAlert,
   Clock,
+  Zap,
+  Minus,
+  Feather,
 } from "lucide-react";
+
+const CAPACITY_OPTIONS = [
+  {
+    value: "high",
+    label: "I can take on a lot",
+    icon: Zap,
+    iconColor: "text-emerald-600",
+    selectedRing: "ring-emerald-500",
+    selectedBg: "bg-emerald-50",
+    selectedText: "text-emerald-800",
+  },
+  {
+    value: "normal",
+    label: "Normal day",
+    icon: Minus,
+    iconColor: "text-teal-600",
+    selectedRing: "ring-teal-500",
+    selectedBg: "bg-teal-50",
+    selectedText: "text-teal-800",
+  },
+  {
+    value: "light",
+    label: "I need to keep things light",
+    icon: Feather,
+    iconColor: "text-violet-600",
+    selectedRing: "ring-violet-400",
+    selectedBg: "bg-violet-50",
+    selectedText: "text-violet-800",
+  },
+];
 
 export function MoodCheckin() {
   const dispatch = useDispatch();
@@ -31,6 +63,9 @@ export function MoodCheckin() {
   );
   const [stressLevel, setStressLevel] = useState(
     currentMood?.stressLevel || 3
+  );
+  const [capacityLevel, setCapacityLevel] = useState(
+    currentMood?.capacityLevel || "normal"
   );
   const [note, setNote] = useState("");
   const [feedbackMsg, setFeedbackMsg] = useState("");
@@ -76,6 +111,7 @@ export function MoodCheckin() {
       moodScore: activePreset.moodScore,
       energyLevel: Number(energyLevel),
       stressLevel: Number(stressLevel),
+      capacityLevel,
       note: note.trim() || `Feeling ${activePreset.label} today.`,
       emotions: [selectedMoodPreset],
       checkInTime: now.toISOString(),
@@ -186,14 +222,14 @@ export function MoodCheckin() {
         })}
       </div>
 
-      {/* Expandable Nuance Controls (Sliders & Note) */}
+      {/* Expandable Nuance Controls (Sliders, Capacity & Note) */}
       <div className="relative z-10 mt-4">
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
           className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-teal-700 transition cursor-pointer"
         >
-          <span>{expanded ? "Hide deeper state details" : "Add energy & stress level nuance"}</span>
+          <span>{expanded ? "Hide deeper state details" : "Add energy, capacity & stress nuance"}</span>
           {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
         </button>
 
@@ -239,11 +275,37 @@ export function MoodCheckin() {
               </div>
             </div>
 
+            {/* Today's Capacity — three-option selector */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-slate-600">Today's capacity</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {CAPACITY_OPTIONS.map((opt) => {
+                  const Icon = opt.icon;
+                  const isSelected = capacityLevel === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setCapacityLevel(opt.value)}
+                      className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                        isSelected
+                          ? `${opt.selectedBg} ${opt.selectedText} ring-2 ${opt.selectedRing} border-transparent shadow-sm`
+                          : "bg-white/70 text-slate-600 border-slate-200/70 hover:bg-white hover:shadow-sm"
+                      }`}
+                    >
+                      <Icon className={`h-3.5 w-3.5 flex-shrink-0 ${isSelected ? opt.iconColor : "text-slate-400"}`} />
+                      <span>{opt.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Note input */}
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-semibold text-slate-600">
-                  Brief reflection (optional)
+                  Tell me more
                 </label>
                 <VoiceInputButton
                   onResult={(transcription) => {
@@ -255,7 +317,7 @@ export function MoodCheckin() {
                 type="text"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="e.g. Back-to-back meetings today, need clear focus blocks..."
+                placeholder="I'm feeling tired because I didn't sleep well, stressed about tomorrow's presentation, but I still want to get the important work done..."
                 className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
               />
             </div>
@@ -273,7 +335,7 @@ export function MoodCheckin() {
           isLoading={submitting}
           className="rounded-xl px-5 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs tracking-wide shadow-md shadow-teal-600/15"
         >
-          Check In & Recalibrate Plan
+          Check In &amp; Recalibrate Plan
         </Button>
       </div>
     </div>
