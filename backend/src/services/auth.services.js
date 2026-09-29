@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "ai_life_manager_secret_key_2026";
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "24h";
 const SALT_ROUNDS = 10;
 
 /**
@@ -47,7 +47,11 @@ export const generateToken = (payload, expiresIn = JWT_EXPIRES_IN) => {
     (payload && payload.constructor && payload.constructor.name === "ObjectId")
   ) {
     tokenPayload = { id: payload.toString() };
-  } else if (payload && typeof payload === "object" && !(payload instanceof Buffer)) {
+  } else if (
+    payload &&
+    typeof payload === "object" &&
+    !(payload instanceof Buffer)
+  ) {
     // If it's already an object (e.g. { id: user._id }), ensure id is stringified if ObjectId
     tokenPayload = { ...payload };
     if (tokenPayload.id && typeof tokenPayload.id !== "string") {
