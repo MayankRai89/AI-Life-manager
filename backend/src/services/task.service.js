@@ -91,7 +91,7 @@ export const updateTask = async (userId, taskId, updateData) => {
   const task = await Task.findOneAndUpdate(
     { _id: taskId, userId },
     updateData,
-    { new: true, runValidators: true }
+    { returnDocument: "after", runValidators: true }
   );
 
   if (!task) {

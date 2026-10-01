@@ -273,7 +273,7 @@ export const updateProfile = async (req, res) => {
       req.user._id,
       { $set: updates },
       {
-        new: true,
+        returnDocument: "after",
         runValidators: true,
       }
     ).select("-password");

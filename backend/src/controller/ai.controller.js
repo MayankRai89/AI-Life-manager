@@ -218,7 +218,7 @@ export const getDailySuggestion = asyncHandler(async (req, res) => {
       provider: providerUsed,
       providerUsed,
     },
-    { upsert: true, new: true, runValidators: true }
+    { upsert: true, returnDocument: "after", runValidators: true }
   );
 
   res.status(200).json({

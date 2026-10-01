@@ -119,7 +119,7 @@ export const updateMoodCheckIn = async (userId, checkInId, updateData) => {
   const checkIn = await MoodCheckIn.findOneAndUpdate(
     { _id: checkInId, userId },
     updateData,
-    { new: true, runValidators: true }
+    { returnDocument: "after", runValidators: true }
   );
 
   if (!checkIn) {
