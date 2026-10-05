@@ -1,3 +1,4 @@
+import dns from "node:dns";
 import mongoose from "mongoose";
 import logger from "../utils/Logger.js";
 
@@ -8,6 +9,15 @@ async function connectDB() {
     serverSelectionTimeoutMS: 5000,
     socketTimeoutMS: 45000,
   };
+
+  // Configure reliable public DNS servers for MongoDB Atlas SRV lookup on networks/ISPs that refuse SRV records
+  if (process.env.MONGODB_URI?.startsWith("mongodb+srv://")) {
+    try {
+      dns.setServers(["8.8.8.8", "1.1.1.1"]);
+    } catch (dnsErr) {
+      logger.warn(`Could not set custom DNS servers: ${dnsErr.message}`);
+    }
+  }
 
   try {
     const conn = await mongoose.connect(process.env.MONGODB_URI, options);
