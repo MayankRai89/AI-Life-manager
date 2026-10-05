@@ -52,7 +52,7 @@ services:
     container_name: ai_life_frontend
     restart: unless-stopped
     ports:
-      - "5173:80"
+      # Access frontend at http://localhost:8080 (avoids clash with local npm run dev on 5173)
       - "8080:80"
     depends_on:
       - backend
