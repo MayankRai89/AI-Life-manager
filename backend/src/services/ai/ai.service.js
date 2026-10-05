@@ -100,8 +100,13 @@ const callGemini = async (prompt, temperature = 0.7, maxTokens = 1024) => {
       process.env.GEMNI_API;
     if (!apiKey) throw new Error("Gemini API key not configured");
 
+    const model =
+      process.env.GEMINI_MODEL ||
+      process.env.GOOGLE_MODEL ||
+      "gemini-2.0-flash";
+
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
       {
         method: "POST",
         signal: controller.signal,
