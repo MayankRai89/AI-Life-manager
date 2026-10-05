@@ -38,3 +38,5 @@ dist/
 build/
 out/
 .next/
+
+PROJECT_SUMMARY.txt
