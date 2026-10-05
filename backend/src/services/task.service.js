@@ -24,6 +24,7 @@ export const getTasks = async (userId, options = {}) => {
     order = "desc",
     page = 1,
     limit = 20,
+    cursor,
   } = options;
 
   const query = { userId };
@@ -50,17 +51,26 @@ export const getTasks = async (userId, options = {}) => {
   }
 
   const pageNum = parseInt(page, 10) || 1;
-  const limitNum = parseInt(limit, 10) || 20;
-  const skip = (pageNum - 1) * limitNum;
+  const limitNum = Math.min(parseInt(limit, 10) || 20, 100);
   const sortOrder = order === "asc" ? 1 : -1;
+
+  // Keyset cursor pagination takes precedence for O(1) performance at scale
+  if (cursor) {
+    query._id = sortOrder === 1 ? { $gt: cursor } : { $lt: cursor };
+  }
+  const skip = cursor ? 0 : (pageNum - 1) * limitNum;
 
   const [tasks, totalTasks] = await Promise.all([
     Task.find(query)
-      .sort({ [sortBy]: sortOrder })
+      .sort(cursor ? { _id: sortOrder } : { [sortBy]: sortOrder })
       .skip(skip)
-      .limit(limitNum),
+      .limit(limitNum)
+      .lean(),
     Task.countDocuments(query),
   ]);
+
+  const nextCursor =
+    tasks.length === limitNum ? tasks[tasks.length - 1]._id : null;
 
   return {
     tasks,
@@ -69,6 +79,7 @@ export const getTasks = async (userId, options = {}) => {
       limit: limitNum,
       totalPages: Math.ceil(totalTasks / limitNum),
       totalTasks,
+      nextCursor,
     },
   };
 };

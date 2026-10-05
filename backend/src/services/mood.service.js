@@ -56,6 +56,7 @@ export const getMoodCheckIns = async (userId, options = {}) => {
     limit = 20,
     sortBy = "checkInTime",
     order = "desc",
+    cursor,
   } = options;
 
   const query = { userId };
@@ -71,17 +72,27 @@ export const getMoodCheckIns = async (userId, options = {}) => {
   }
 
   const pageNum = parseInt(page, 10) || 1;
-  const limitNum = parseInt(limit, 10) || 20;
-  const skip = (pageNum - 1) * limitNum;
+  const limitNum = Math.min(parseInt(limit, 10) || 20, 100);
   const sortOrder = order === "asc" ? 1 : -1;
+
+  if (cursor) {
+    query._id = sortOrder === 1 ? { $gt: cursor } : { $lt: cursor };
+  }
+  const skip = cursor ? 0 : (pageNum - 1) * limitNum;
 
   const [moodCheckIns, totalCheckIns] = await Promise.all([
     MoodCheckIn.find(query)
-      .sort({ [sortBy]: sortOrder })
+      .sort(cursor ? { _id: sortOrder } : { [sortBy]: sortOrder })
       .skip(skip)
-      .limit(limitNum),
+      .limit(limitNum)
+      .lean(),
     MoodCheckIn.countDocuments(query),
   ]);
+
+  const nextCursor =
+    moodCheckIns.length === limitNum
+      ? moodCheckIns[moodCheckIns.length - 1]._id
+      : null;
 
   return {
     moodCheckIns,
@@ -90,6 +101,7 @@ export const getMoodCheckIns = async (userId, options = {}) => {
       limit: limitNum,
       totalPages: Math.ceil(totalCheckIns / limitNum),
       totalCheckIns,
+      nextCursor,
     },
   };
 };
