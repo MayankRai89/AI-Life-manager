@@ -200,16 +200,14 @@ jobs:
 
     steps:
       - name: Deploy to Cloud (Render / Railway / Webhook)
-        if: ${{ secrets.DEPLOY_WEBHOOK_URL != '' }}
         env:
           DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
         run: |
-          echo "Triggering deployment webhook..."
-          curl -X POST "$DEPLOY_WEBHOOK_URL"
-          echo "Deployment triggered successfully!"
-
-      - name: Deployment Instructions Notice
-        if: ${{ secrets.DEPLOY_WEBHOOK_URL == '' }}
-        run: |
-          echo "Notice: DEPLOY_WEBHOOK_URL secret not configured in GitHub Secrets."
-          echo "Docker image was successfully built, scanned, and pushed to GHCR."
+          if [ -n "$DEPLOY_WEBHOOK_URL" ]; then
+            echo "Triggering deployment webhook..."
+            curl -s -S -X POST "$DEPLOY_WEBHOOK_URL"
+            echo "Deployment triggered successfully!"
+          else
+            echo "Notice: DEPLOY_WEBHOOK_URL secret not configured in GitHub Secrets."
+            echo "Docker image was successfully built, scanned, and pushed to GHCR."
+          fi
