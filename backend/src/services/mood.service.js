@@ -1,4 +1,4 @@
-import MoodCheckIn from "../model/moodCheckins.model.js";
+import MoodCheckIn from "../model/moodCheckIns.model.js";
 import { AppError } from "../middleware/errorHandler.middleware.js";
 import logger from "../utils/Logger.js";
 import { getDerivedContext } from "./ai/ai.service.js";
