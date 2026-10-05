@@ -33,13 +33,12 @@ services:
     environment:
       - PORT=3000
       - NODE_ENV=production
-      - MONGODB_URI=mongodb://mongodb:27017/ai_life_manager
       - CLIENT_URL=http://localhost:5173
+      # MONGODB_URI comes from env_file (Atlas URI) — no override needed
+      # The app sets dns.setServers(["8.8.8.8","1.1.1.1"]) internally for SRV resolution
     env_file:
       - ./backend/.env
-    depends_on:
-      mongodb:
-        condition: service_healthy
+    # No depends_on needed when using Atlas (external cloud DB)
     networks:
       - ai-network
 
