@@ -73,6 +73,11 @@ jobs:
         image: mongo:7.0
         ports:
           - 27017:27017
+        options: >-
+          --health-cmd "echo 'db.runCommand(\"ping\").ok' | mongosh localhost:27017/test --quiet"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout Code
@@ -98,15 +103,39 @@ jobs:
           MONGO_MAX_POOL_SIZE: 20
           MONGO_MIN_POOL_SIZE: 2
         run: |
-          node server.js &
+          echo "Waiting for MongoDB to be accessible on port 27017..."
+          for i in {1..30}; do
+            if nc -z localhost 27017; then
+              echo "MongoDB is accepting connections!"
+              break
+            fi
+            echo "Waiting for MongoDB... ($i/30)"
+            sleep 1
+          done
+
+          echo "Starting backend server in test mode..."
+          node server.js > server.log 2>&1 &
           SERVER_PID=$!
-          echo "Waiting for server to initialize..."
-          sleep 5
-          if curl --fail http://localhost:3000/api/health; then
-            echo "Server health check passed!"
+
+          echo "Polling /api/health endpoint..."
+          SUCCESS=0
+          for i in {1..20}; do
+            if curl -s -f http://localhost:3000/api/health > /dev/null; then
+              echo "Server health check passed on attempt $i!"
+              SUCCESS=1
+              break
+            fi
+            echo "Server not ready yet, retrying in 1s... ($i/20)"
+            sleep 1
+          done
+
+          if [ $SUCCESS -eq 1 ]; then
+            echo "Integration check succeeded! Server log snippet:"
+            head -n 25 server.log
             kill $SERVER_PID || true
           else
-            echo "Server health check failed!"
+            echo "Integration check failed! Full server logs:"
+            cat server.log
             kill -9 $SERVER_PID || true
             exit 1
           fi
