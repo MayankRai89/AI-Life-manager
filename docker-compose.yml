@@ -1,0 +1,70 @@
+services:
+  # ============================================================
+  # 1. Database: MongoDB 7.0 Service
+  # ============================================================
+  mongodb:
+    image: mongo:7.0
+    container_name: ai_life_mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - ai-network
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'db.runCommand(\"ping\").ok' | mongosh localhost:27017/test --quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ============================================================
+  # 2. Backend: Express 5 + Multi-LLM API Service
+  # ============================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ai_life_backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongodb:27017/ai_life_manager
+      - CLIENT_URL=http://localhost:5173
+    env_file:
+      - ./backend/.env
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - ai-network
+
+  # ============================================================
+  # 3. Frontend: React + Vite + Nginx Reverse Proxy
+  # ============================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ai_life_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - ai-network
+
+volumes:
+  mongo-data:
+    name: ai_life_mongo_data
+
+networks:
+  ai-network:
+    name: ai_life_network
+    driver: bridge

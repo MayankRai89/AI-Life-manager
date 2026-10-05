@@ -46,3 +46,30 @@ cd frontend
 npm install
 npm run dev              # Starts on http://localhost:5173
 ```
+
+---
+
+## 🐳 Run Entire Project with Docker (One-Command Setup)
+
+To spin up the entire production-grade stack (**MongoDB Database + Backend API + Frontend SPA + Nginx Reverse Proxy**) inside isolated containers:
+
+```bash
+# Start all services in the background
+docker compose up --build -d
+
+# Check running container statuses
+docker compose ps
+
+# View unified real-time logs
+docker compose logs -f
+
+# Stop all containers
+docker compose down
+```
+
+| Service | Container Name | URL / Port |
+|---|---|---|
+| **Frontend Web App** | `ai_life_frontend` | [http://localhost:5173](http://localhost:5173) (or [http://localhost:8080](http://localhost:8080)) |
+| **Backend API** | `ai_life_backend` | [http://localhost:3000](http://localhost:3000) (Health: `/api/health`) |
+| **MongoDB** | `ai_life_mongodb` | `localhost:27017` (Persistent volume: `ai_life_mongo_data`) |
+
