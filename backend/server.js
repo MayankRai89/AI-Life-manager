@@ -12,14 +12,17 @@ const server = app.listen(PORT, () => {
   logger.info(`Server running on PORT: ${PORT}`);
 });
 
-// Handle graceful shutdown
-process.on("SIGINT", () => {
-  logger.warn("Shutting down server gracefully...");
+// Handle graceful shutdown (SIGINT for terminal, SIGTERM for Docker/Kubernetes)
+const gracefulShutdown = (signal) => {
+  logger.warn(`Received ${signal}. Shutting down server gracefully...`);
   server.close(() => {
-    logger.info("Server closed.");
+    logger.info("HTTP server closed.");
     process.exit(0);
   });
-});
+};
+
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 
 process.on("unhandledRejection", (err) => {
   logger.error(`Unhandled Rejection: ${err.message}`, err);
