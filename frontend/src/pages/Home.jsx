@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import MoodCheckin from "../components/MoodCheckin";
 import TaskList from "../components/TaskList";
 import DayPlanCard from "../components/DayPlanCard";
-import NudgeCard from "../components/NudgeCard";
+import NudgeBanner from "../components/NudgeBanner";
 import { fetchTasks } from "../redux/slices/taskSlice";
 import { fetchTodayMood } from "../redux/slices/moodSlice";
 import { fetchAIDayPlan } from "../redux/slices/aiSlice";
@@ -35,8 +35,8 @@ export function Home() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
-      {/* Wellness Nudge - A moment of its own */}
-      <NudgeCard />
+      {/* Wellness Nudge Banner */}
+      <NudgeBanner />
 
       {/* Greeting & Quick Stats Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">

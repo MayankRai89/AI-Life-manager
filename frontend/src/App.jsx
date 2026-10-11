@@ -10,6 +10,7 @@ import Register from "./pages/Register";
 import Onboarding from "./pages/Onboarding";
 import Insights from "./pages/Insights";
 import ColdStartBanner from "./components/ColdStartBanner";
+import useNudges from "./hooks/useNudges";
 import { MessageSquareHeart, X, Send, Sparkles } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { sendAIChatMessage } from "./redux/slices/aiSlice";
@@ -20,6 +21,9 @@ export function App() {
   const { chatMessages, loadingChat } = useSelector((state) => state.ai);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
+
+  // Activate 75-minute in-app wellness nudge cycle
+  useNudges();
 
   const handleSendChat = (e) => {
     e.preventDefault();
