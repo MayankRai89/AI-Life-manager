@@ -206,6 +206,30 @@ export const updateTaskValidationRules = [
     .withMessage("Due date must be a valid ISO8601 date"),
 ];
 
+export const forgotPasswordValidationRules = [
+  body("email")
+    .trim()
+    .notEmpty()
+    .withMessage("Email is required")
+    .isEmail()
+    .withMessage("Please provide a valid email address")
+    .normalizeEmail(),
+];
+
+export const resetPasswordValidationRules = [
+  body("password")
+    .notEmpty()
+    .withMessage("Password is required")
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters long"),
+];
+
+export const deleteAccountValidationRules = [
+  body("password")
+    .notEmpty()
+    .withMessage("Password is required to confirm account deletion"),
+];
+
 export default {
   handleValidationErrors,
   validate,
@@ -213,4 +237,7 @@ export default {
   loginValidationRules,
   createTaskValidationRules,
   updateTaskValidationRules,
+  forgotPasswordValidationRules,
+  resetPasswordValidationRules,
+  deleteAccountValidationRules,
 };
