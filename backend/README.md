@@ -449,8 +449,11 @@ Base Route: `/api/auth`
 | `POST` | `/register` | Public | Register new user. Sets JWT in httpOnly cookie & returns user object. |
 | `POST` | `/login` | Public | Authenticate with email/username + password. Sets JWT cookie. |
 | `POST` | `/logout` | Public | Clears authentication cookie. |
+| `POST` | `/forgot-password` | Public | Request password reset email with SHA-256 token (rate limited). |
+| `POST` | `/reset-password/:token` | Public | Reset password using valid 30-min token (rate limited). |
 | `GET` | `/me` | Private | Retrieve current authenticated user profile & schedule. |
 | `PUT` | `/profile` | Private | Update name, schedule, medical report, and AI consent. |
+| `DELETE`| `/me` | Private | Permanently delete account and cascade delete tasks, moods, and plans. |
 
 #### Sample Registration Payload:
 ```json
@@ -495,6 +498,7 @@ Base Route: `/api/moods` *(All routes require Authentication)*
 | `GET` | `/` | List mood history with pagination. |
 | `GET` | `/latest` | Get the most recent mood check-in record. |
 | `GET` | `/analytics`| Trend analytics (averages for mood, energy, and stress over time). |
+| `GET` | `/insights` | `?days=7` (capped at 30) Aggregate mood, energy, stress trends and task completion by capacity and mood. |
 | `GET` | `/:id` | Retrieve check-in details by ID. |
 | `PUT` | `/:id` | Update mood check-in note or tags. |
 | `DELETE`| `/:id` | Delete mood check-in record. |
@@ -507,8 +511,10 @@ Base Route: `/api/ai` *(All routes require Authentication)*
 | Method | Endpoint | Parameters / Body | Description |
 |---|---|---|---|
 | `GET` | `/daily-suggestion` | `?forceRefresh=true` | Returns personalized `DayPlan` synthesized from current mood + pending tasks. |
+| `PATCH` | `/daily-suggestion/:id/feedback` | `{ rating: "up" \| "down", reason? }` | User rating and optional reason for day plan feedback. |
 | `GET` | `/prioritize-tasks` | — | AI-ranked task sequence matched to current energy capacity. |
 | `GET` | `/mood-analysis` | `?days=30` | Longitudinal emotional sentiment and burnout-risk assessment. |
+| `GET` | `/nudge` | `?minutesSinceLastBreak` | Non-medical in-app wellness prompt (hydrate, move, rest, eat, encouragement). |
 | `POST` | `/chat` | `{ "message": "string" }` | Conversational assistant aware of your pending tasks and current mental state. |
 
 ---
