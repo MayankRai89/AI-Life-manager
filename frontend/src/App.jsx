@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, Link } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import LandingPage from "./pages/LandingPage";
 import Home from "./pages/Home";
@@ -11,6 +11,7 @@ import Onboarding from "./pages/Onboarding";
 import Insights from "./pages/Insights";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import Privacy from "./pages/Privacy";
 import ColdStartBanner from "./components/ColdStartBanner";
 import useNudges from "./hooks/useNudges";
 import { MessageSquareHeart, X, Send, Sparkles } from "lucide-react";
@@ -55,6 +56,7 @@ export function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
+          <Route path="/privacy" element={<Privacy />} />
           <Route path="/onboarding" element={<Onboarding />} />
         </Routes>
       </main>
@@ -146,7 +148,16 @@ export function App() {
       {/* In-app footer */}
       {!isLanding && (
         <footer className="border-t border-slate-200/80 bg-white py-6 text-center text-xs text-slate-400">
-          <p>AI Life Manager — Productivity attuned to your mental wellbeing.</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 px-4">
+            <p>AI Life Manager — Productivity attuned to your mental wellbeing.</p>
+            <span className="hidden sm:inline text-slate-300">•</span>
+            <Link
+              to="/privacy"
+              className="text-teal-600 hover:text-teal-800 font-medium underline underline-offset-2"
+            >
+              Privacy Policy
+            </Link>
+          </div>
         </footer>
       )}
     </div>

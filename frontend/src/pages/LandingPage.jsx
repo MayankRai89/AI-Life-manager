@@ -651,6 +651,9 @@ export function LandingPage() {
               <Link to="/register" className="hover:text-teal-700 transition">
                 Sign Up
               </Link>
+              <Link to="/privacy" className="hover:text-teal-700 transition">
+                Privacy
+              </Link>
               <a
                 href="https://github.com"
                 target="_blank"
