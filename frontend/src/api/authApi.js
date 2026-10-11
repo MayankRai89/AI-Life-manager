@@ -25,6 +25,25 @@ export const authApi = {
     const response = await apiClient.put("/auth/profile", userData);
     return response.data;
   },
+
+  forgotPassword: async (email) => {
+    const response = await apiClient.post("/auth/forgot-password", { email });
+    return response.data;
+  },
+
+  resetPassword: async (token, password) => {
+    const response = await apiClient.post(`/auth/reset-password/${token}`, {
+      password,
+    });
+    return response.data;
+  },
+
+  deleteAccount: async (password) => {
+    const response = await apiClient.delete("/auth/me", {
+      data: { password },
+    });
+    return response.data;
+  },
 };
 
 export default authApi;
