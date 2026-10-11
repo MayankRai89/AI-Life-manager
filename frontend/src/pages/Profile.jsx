@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { saveUserProfile, updateUserProfile } from "../redux/slices/authSlice";
 import { Button } from "../components/ui/Button";
@@ -58,6 +59,24 @@ export function Profile() {
   const [aiPersonalizationConsent, setAiPersonalizationConsent] = useState(
     user?.consent?.aiPersonalization || false
   );
+
+  // In-App Wellness Nudges (On by default)
+  const [nudgesEnabled, setNudgesEnabled] = useState(() => {
+    try {
+      return localStorage.getItem("ai_life_nudges_enabled") !== "false";
+    } catch {
+      return true;
+    }
+  });
+
+  const handleToggleNudges = (enabled) => {
+    setNudgesEnabled(enabled);
+    try {
+      localStorage.setItem("ai_life_nudges_enabled", String(enabled));
+    } catch {
+      // ignore
+    }
+  };
 
   // Tag inputs
   const [newCondition, setNewCondition] = useState("");
@@ -333,11 +352,19 @@ export function Profile() {
                 <p className="text-xs text-slate-600 leading-relaxed max-w-xl">
                   When enabled, non-identifying derived flags (e.g. &ldquo;avoid intense exercise&rdquo;, &ldquo;vegetarian preference&rdquo;) are factored into your daily schedule. Your raw medical conditions, medications, notes, and documents are <strong>never</strong> shared with any AI provider.
                 </p>
-                {aiPersonalizationConsent && user?.consent?.consentedAt && (
-                  <p className="text-[10px] text-teal-700 font-medium pt-1">
-                    Consented on: {new Date(user.consent.consentedAt).toLocaleDateString()}
-                  </p>
-                )}
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  <Link
+                    to="/privacy"
+                    className="text-[11px] font-medium text-teal-700 hover:text-teal-900 underline underline-offset-2"
+                  >
+                    Learn more in our Privacy Policy
+                  </Link>
+                  {aiPersonalizationConsent && user?.consent?.consentedAt && (
+                    <span className="text-[10px] text-slate-500">
+                      • Consented on: {new Date(user.consent.consentedAt).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
               </div>
               <label className="relative inline-flex cursor-pointer items-center shrink-0 mt-1">
                 <input
@@ -347,6 +374,41 @@ export function Profile() {
                   className="peer sr-only"
                 />
                 <div className="h-6 w-11 rounded-full bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-teal-500/20 peer peer-checked:after:translate-x-full peer-checked:after:border-white peer-checked:bg-teal-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+              </label>
+            </div>
+          </div>
+
+          {/* In-App Wellness Nudges Toggle */}
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-4 transition-all">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-amber-500" />
+                  <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                    In-App Wellness Nudges
+                  </span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                      nudgesEnabled
+                        ? "bg-emerald-100 text-emerald-800"
+                        : "bg-slate-100 text-slate-600"
+                    }`}
+                  >
+                    {nudgesEnabled ? "Enabled" : "Paused"}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed max-w-xl">
+                  Receive gentle suggestions (hydration, light movement, breaks) every 75 minutes while you work. Never interrupts outside your wake-to-sleep schedule.
+                </p>
+              </div>
+              <label className="relative inline-flex cursor-pointer items-center shrink-0 mt-1">
+                <input
+                  type="checkbox"
+                  checked={nudgesEnabled}
+                  onChange={(e) => handleToggleNudges(e.target.checked)}
+                  className="peer sr-only"
+                />
+                <div className="h-6 w-11 rounded-full bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-amber-500/20 peer peer-checked:after:translate-x-full peer-checked:after:border-white peer-checked:bg-amber-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
               </label>
             </div>
           </div>
