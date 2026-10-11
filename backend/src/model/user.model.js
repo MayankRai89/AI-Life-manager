@@ -112,6 +112,11 @@ const userSchema = new mongoose.Schema(
         type: Date,
       },
     },
+
+    onboardingCompleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

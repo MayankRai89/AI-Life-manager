@@ -138,7 +138,12 @@ export function Register() {
 
     const result = await dispatch(registerUser(payload));
     if (!result.error) {
-      navigate("/dashboard");
+      const user = result.payload?.data?.user || result.payload?.user;
+      if (user && user.onboardingCompleted === false) {
+        navigate("/onboarding");
+      } else {
+        navigate("/dashboard");
+      }
     }
   };
 

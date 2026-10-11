@@ -7,6 +7,7 @@ import {
   updateMoodCheckIn,
   deleteMoodCheckIn,
   getMoodAnalytics,
+  getMoodInsights,
 } from "../controller/mood.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
 
@@ -19,6 +20,7 @@ router.route("/").get(getMoodCheckIns).post(createMoodCheckIn);
 
 router.get("/latest", getLatestMoodCheckIn);
 router.get("/analytics", getMoodAnalytics);
+router.get("/insights", getMoodInsights);
 
 router
   .route("/:id")

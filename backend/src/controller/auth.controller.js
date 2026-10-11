@@ -71,6 +71,7 @@ export const register = async (req, res) => {
       timezone: timezone || "UTC",
       schedule: schedule || {},
       medicalReport: medicalReport || {},
+      onboardingCompleted: false,
     };
 
     if (phoneNumber && phoneNumber.trim()) {
@@ -164,6 +165,12 @@ export const login = async (req, res) => {
       });
     }
 
+    // Treat existing users without onboardingCompleted flag as completed
+    if (user.onboardingCompleted === undefined || user.onboardingCompleted === null) {
+      user.onboardingCompleted = true;
+      await User.updateOne({ _id: user._id }, { $set: { onboardingCompleted: true } });
+    }
+
     const token = generateToken(user._id);
     res.cookie("token", token, getCookieOptions());
 
@@ -217,10 +224,14 @@ export const logout = async (req, res) => {
 export const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
+    const userResponse = user ? user.toObject() : null;
+    if (userResponse && userResponse.onboardingCompleted === undefined) {
+      userResponse.onboardingCompleted = true;
+    }
     return res.status(200).json({
       status: "success",
       data: {
-        user,
+        user: userResponse,
       },
     });
   } catch (error) {
@@ -248,6 +259,7 @@ export const updateProfile = async (req, res) => {
       "schedule",
       "medicalReport",
       "consent",
+      "onboardingCompleted",
     ];
 
     const updates = {};
@@ -266,6 +278,8 @@ export const updateProfile = async (req, res) => {
             aiPersonalization,
             consentedAt: aiPersonalization ? new Date() : null,
           };
+        } else if (key === "onboardingCompleted") {
+          updates.onboardingCompleted = Boolean(req.body.onboardingCompleted);
         } else {
           updates[key] = req.body[key];
         }

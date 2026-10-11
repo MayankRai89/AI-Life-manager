@@ -1,4 +1,5 @@
 import MoodCheckIn from "../model/moodCheckIns.model.js";
+import Task from "../model/task.model.js";
 import { AppError } from "../middleware/errorHandler.middleware.js";
 import logger from "../utils/Logger.js";
 import { getDerivedContext } from "./ai/ai.service.js";
@@ -242,6 +243,209 @@ export const getMoodAnalytics = async (userId, days = 30) => {
   };
 };
 
+/**
+ * Get mood insights including 7-day daily trends, task completion by capacity and mood
+ */
+export const getMoodInsights = async (userId, days = 7, userTimezone = "UTC") => {
+  const daysNum = Math.min(Math.max(parseInt(days, 10) || 7, 1), 30);
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - daysNum);
+
+  let tz = userTimezone || "UTC";
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: tz });
+  } catch {
+    tz = "UTC";
+  }
+
+  // 1. Daily mood check-in aggregations with user timezone
+  let dailyAgg = [];
+  try {
+    dailyAgg = await MoodCheckIn.aggregate([
+      {
+        $match: {
+          userId,
+          checkInTime: { $gte: startDate },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$checkInTime",
+              timezone: tz,
+            },
+          },
+          avgMood: { $avg: "$moodScore" },
+          avgEnergy: { $avg: "$energyLevel" },
+          avgStress: { $avg: "$stressLevel" },
+          checkIns: { $sum: 1 },
+          capacities: { $addToSet: "$capacityLevel" },
+          moods: { $addToSet: "$mood" },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+  } catch (err) {
+    dailyAgg = await MoodCheckIn.aggregate([
+      {
+        $match: {
+          userId,
+          checkInTime: { $gte: startDate },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$checkInTime",
+            },
+          },
+          avgMood: { $avg: "$moodScore" },
+          avgEnergy: { $avg: "$energyLevel" },
+          avgStress: { $avg: "$stressLevel" },
+          checkIns: { $sum: 1 },
+          capacities: { $addToSet: "$capacityLevel" },
+          moods: { $addToSet: "$mood" },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+  }
+
+  if (!dailyAgg || dailyAgg.length === 0) {
+    return {
+      daily: [],
+      completionByCapacity: [],
+      completionByMood: [],
+    };
+  }
+
+  // 2. Completed tasks aggregation
+  let completedTasksAgg = [];
+  try {
+    completedTasksAgg = await Task.aggregate([
+      {
+        $match: {
+          userId,
+          status: "completed",
+          completedAt: { $gte: startDate },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$completedAt",
+              timezone: tz,
+            },
+          },
+          completedCount: { $sum: 1 },
+        },
+      },
+    ]);
+  } catch (err) {
+    completedTasksAgg = await Task.aggregate([
+      {
+        $match: {
+          userId,
+          status: "completed",
+          completedAt: { $gte: startDate },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$completedAt",
+            },
+          },
+          completedCount: { $sum: 1 },
+        },
+      },
+    ]);
+  }
+
+  const completedMap = new Map();
+  for (const item of completedTasksAgg) {
+    completedMap.set(item._id, item.completedCount);
+  }
+
+  const daily = dailyAgg.map((d) => ({
+    date: d._id,
+    avgMood: parseFloat((d.avgMood || 0).toFixed(1)),
+    avgEnergy: parseFloat((d.avgEnergy || 0).toFixed(1)),
+    avgStress: parseFloat((d.avgStress || 0).toFixed(1)),
+    checkIns: d.checkIns || 0,
+  }));
+
+  const capacityStats = {
+    high: { tasks: 0, days: 0 },
+    normal: { tasks: 0, days: 0 },
+    light: { tasks: 0, days: 0 },
+  };
+
+  const moodStats = {};
+
+  for (const day of dailyAgg) {
+    const tasksCompleted = completedMap.get(day._id) || 0;
+
+    const dayCapacities = Array.isArray(day.capacities) ? day.capacities : [];
+    for (const cap of ["high", "normal", "light"]) {
+      if (dayCapacities.includes(cap)) {
+        capacityStats[cap].tasks += tasksCompleted;
+        capacityStats[cap].days += 1;
+      }
+    }
+
+    const dayMoods = Array.isArray(day.moods) ? day.moods : [];
+    for (const m of dayMoods) {
+      if (!m) continue;
+      if (!moodStats[m]) {
+        moodStats[m] = { tasks: 0, days: 0 };
+      }
+      moodStats[m].tasks += tasksCompleted;
+      moodStats[m].days += 1;
+    }
+  }
+
+  const completionByCapacity = ["high", "normal", "light"]
+    .map((cap) => ({
+      capacityLevel: cap,
+      avgTasksCompleted:
+        capacityStats[cap].days > 0
+          ? parseFloat(
+              (capacityStats[cap].tasks / capacityStats[cap].days).toFixed(1)
+            )
+          : 0,
+      daysCounted: capacityStats[cap].days,
+    }))
+    .filter((c) => c.daysCounted > 0);
+
+  const completionByMood = Object.keys(moodStats)
+    .map((mood) => ({
+      mood,
+      avgTasksCompleted:
+        moodStats[mood].days > 0
+          ? parseFloat(
+              (moodStats[mood].tasks / moodStats[mood].days).toFixed(1)
+            )
+          : 0,
+      daysCounted: moodStats[mood].days,
+    }))
+    .sort((a, b) => b.avgTasksCompleted - a.avgTasksCompleted);
+
+  return {
+    daily,
+    completionByCapacity,
+    completionByMood,
+  };
+};
+
 export default {
   createMoodCheckIn,
   getMoodCheckIns,
@@ -250,4 +454,5 @@ export default {
   updateMoodCheckIn,
   deleteMoodCheckIn,
   getMoodAnalytics,
+  getMoodInsights,
 };

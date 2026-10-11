@@ -44,6 +44,18 @@ export const fetchMoodAnalytics = createAsyncThunk(
   }
 );
 
+export const fetchMoodInsights = createAsyncThunk(
+  "mood/fetchMoodInsights",
+  async (days = 7, { rejectWithValue }) => {
+    try {
+      const data = await moodApi.getMoodInsights(days);
+      return data.data || data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message);
+    }
+  }
+);
+
 const moodSlice = createSlice({
   name: "mood",
   initialState: {
@@ -53,9 +65,16 @@ const moodSlice = createSlice({
     stressLevel: 3,
     note: "",
     analytics: null,
+    insights: {
+      daily: [],
+      completionByCapacity: [],
+      completionByMood: [],
+    },
     loading: false,
+    loadingInsights: false,
     submitting: false,
     error: null,
+    insightsError: null,
     justSubmitted: false,
   },
   reducers: {
@@ -114,6 +133,23 @@ const moodSlice = createSlice({
       // Analytics
       .addCase(fetchMoodAnalytics.fulfilled, (state, action) => {
         state.analytics = action.payload;
+      })
+      // Insights
+      .addCase(fetchMoodInsights.pending, (state) => {
+        state.loadingInsights = true;
+        state.insightsError = null;
+      })
+      .addCase(fetchMoodInsights.fulfilled, (state, action) => {
+        state.loadingInsights = false;
+        state.insights = action.payload || {
+          daily: [],
+          completionByCapacity: [],
+          completionByMood: [],
+        };
+      })
+      .addCase(fetchMoodInsights.rejected, (state, action) => {
+        state.loadingInsights = false;
+        state.insightsError = action.payload;
       });
   },
 });

@@ -6,6 +6,7 @@ import {
   taskPrioritizationPrompt,
   quickChatPrompt,
   buildContextExtractionPrompt,
+  buildNudgePrompt,
 } from "./promptTemplet.js";
 
 /** Per-provider fetch timeout — prevents one slow provider from blocking fallback/fanout */
@@ -567,10 +568,94 @@ export const getDerivedContext = async (note) => {
   }
 };
 
+/**
+ * Validates the shape of the Nudge response JSON
+ */
+export const validateNudgeShape = (data) => {
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    return false;
+  }
+  if (typeof data.nudge !== "string" || !data.nudge.trim()) {
+    return false;
+  }
+  const validCategories = ["eat", "move", "rest", "hydrate", "encouragement"];
+  if (
+    typeof data.category !== "string" ||
+    !validCategories.includes(data.category.toLowerCase().trim())
+  ) {
+    return false;
+  }
+  return true;
+};
+
+/**
+ * Get an empathetic in-app nudge based on current state, using fallback runner at temperature 0.8
+ */
+export const getNudge = async ({
+  user,
+  moodCheckIn,
+  capacityLevel,
+  tasksCompletedToday,
+  minutesSinceLastBreak,
+}) => {
+  const { system, user: userPrompt } = buildNudgePrompt({
+    user,
+    moodCheckIn,
+    capacityLevel,
+    tasksCompletedToday,
+    minutesSinceLastBreak,
+  });
+
+  const combinedPrompt = `${system}\n\n${userPrompt}`;
+
+  try {
+    const result = await executeFallback(
+      combinedPrompt,
+      0.8,
+      250,
+      validateNudgeShape
+    );
+
+    let parsed = null;
+    if (result.data && typeof result.data === "object") {
+      parsed = result.data;
+    } else {
+      parsed = extractAndParseJSON(result.text);
+    }
+
+    if (!validateNudgeShape(parsed)) {
+      parsed = {
+        nudge: "Take a steady breath, drink a glass of water, and give your eyes a momentary rest.",
+        category: "hydrate",
+      };
+    }
+
+    return {
+      data: {
+        nudge: parsed.nudge.trim(),
+        category: parsed.category.toLowerCase().trim(),
+      },
+      providerUsed: result.providerUsed || result.provider || "fallback",
+      latencyMs: result.latencyMs || result.duration || 0,
+    };
+  } catch (err) {
+    logger.warn(`[AI] getNudge fallback used due to: ${err.message}`);
+    return {
+      data: {
+        nudge: "Take a steady breath, drink a glass of water, and give your eyes a momentary rest.",
+        category: "hydrate",
+      },
+      providerUsed: "local_fallback",
+      latencyMs: 0,
+    };
+  }
+};
+
 export default {
   AI_MODE,
   getProviderOrder,
   validateDayPlanShape,
+  validateNudgeShape,
   extractAndParseJSON,
   executeFallback,
   executeFanout,
@@ -581,4 +666,5 @@ export default {
   prioritizeTasks,
   quickChat,
   getDerivedContext,
+  getNudge,
 };

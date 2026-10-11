@@ -100,6 +100,20 @@ const dayPlanSchema = new mongoose.Schema(
       type: String,
       default: "ai",
     },
+    feedback: {
+      rating: {
+        type: String,
+        enum: ["up", "down"],
+      },
+      reason: {
+        type: String,
+        trim: true,
+        maxlength: 200,
+      },
+      ratedAt: {
+        type: Date,
+      },
+    },
     providerUsed: {
       type: String,
       default: "ai",

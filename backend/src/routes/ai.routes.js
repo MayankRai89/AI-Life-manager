@@ -4,9 +4,11 @@ import {
   getMoodAnalysis,
   getPrioritizedTasks,
   chat,
+  rateDayPlanFeedback,
+  getNudge,
 } from "../controller/ai.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
-import { body } from "express-validator";
+import { body, param } from "express-validator";
 import { validate } from "../middleware/validate.middleware.js";
 
 const router = express.Router();
@@ -15,11 +17,42 @@ const router = express.Router();
 router.use(protect);
 
 /**
+ * @route   GET /api/ai/nudge
+ * @desc    Context-aware in-app wellness nudge
+ * @access  Private
+ */
+router.get("/nudge", getNudge);
+
+/**
  * @route   GET /api/ai/daily-suggestion
  * @desc    Personalized day plan based on latest mood + pending tasks
  * @access  Private
  */
 router.get("/daily-suggestion", getDailySuggestion);
+
+/**
+ * @route   PATCH /api/ai/daily-suggestion/:id/feedback
+ * @desc    Submit thumbs up/down feedback for a personalized day plan
+ * @access  Private
+ */
+router.patch(
+  "/daily-suggestion/:id/feedback",
+  validate([
+    param("id").isMongoId().withMessage("Invalid day plan ID"),
+    body("rating")
+      .notEmpty()
+      .withMessage("Rating is required")
+      .isIn(["up", "down"])
+      .withMessage("Rating must be either 'up' or 'down'"),
+    body("reason")
+      .optional()
+      .isString()
+      .trim()
+      .isLength({ max: 200 })
+      .withMessage("Reason cannot exceed 200 characters"),
+  ]),
+  rateDayPlanFeedback
+);
 
 /**
  * @route   GET /api/ai/mood-analysis

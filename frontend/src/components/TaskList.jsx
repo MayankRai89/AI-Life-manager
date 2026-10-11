@@ -27,12 +27,13 @@ import {
   Zap,
   Tag,
   Search,
+  AlertCircle,
 } from "lucide-react";
 
 export function TaskList({ showHeader = true, maxItems = null }) {
   const dispatch = useDispatch();
   const { tasks, filter, loading } = useSelector((state) => state.tasks);
-  const { loadingScores } = useSelector((state) => state.ai);
+  const { loadingScores, scoresError } = useSelector((state) => state.ai);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
@@ -192,6 +193,23 @@ export function TaskList({ showHeader = true, maxItems = null }) {
         </div>
       )}
 
+      {/* Friendly error banner if AI prioritization fails */}
+      {scoresError && (
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50/80 p-3.5 text-xs text-rose-800 animate-in fade-in duration-200">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+            <span>Could not prioritize tasks right now. Please try again.</span>
+          </div>
+          <button
+            type="button"
+            onClick={handlePrioritize}
+            className="shrink-0 px-2.5 py-1 rounded-xl bg-white border border-rose-300 text-rose-700 hover:bg-rose-100 font-semibold text-xs cursor-pointer shadow-2xs transition"
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
       {/* Filter Tabs & Search */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white/70 p-2.5 border border-slate-200/70">
         <div className="flex items-center gap-1.5">
@@ -225,18 +243,25 @@ export function TaskList({ showHeader = true, maxItems = null }) {
       {/* Task Cards List */}
       <div className="space-y-3">
         {displayedTasks.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-200 bg-white/40 p-8 text-center">
-            <p className="text-xs text-slate-500">
-              No tasks found for this view. Create one to get started!
-            </p>
+          <div className="rounded-3xl border border-dashed border-slate-200 bg-gradient-to-b from-white/80 to-slate-50/50 p-10 text-center flex flex-col items-center justify-center space-y-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 text-teal-600 border border-teal-100">
+              <CheckSquare className="h-6 w-6" />
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-sm font-bold text-slate-800">No action items found</h4>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                {filter.status !== "all" || filter.searchQuery
+                  ? "No tasks match your current filter. Try adjusting your search or create a new task."
+                  : "Your task queue is completely clear! Add an action item to start planning your mindful schedule."}
+              </p>
+            </div>
             <Button
-              variant="outline"
-              size="sm"
+              type="button"
               onClick={openCreateModal}
-              className="mt-3 gap-1.5 text-xs"
+              className="mt-2 gap-2 text-xs"
             >
-              <Plus className="h-3.5 w-3.5" />
-              <span>Create First Task</span>
+              <Plus className="h-4 w-4" />
+              <span>Add Your First Task</span>
             </Button>
           </div>
         ) : (

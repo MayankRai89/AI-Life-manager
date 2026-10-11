@@ -10,6 +10,7 @@ import {
   Sparkles,
   Shield,
   Heart,
+  TrendingUp,
 } from "lucide-react";
 
 export function Navbar() {
@@ -20,7 +21,8 @@ export function Navbar() {
 
   const navLinks = [
     { to: "/dashboard", label: "Dashboard", icon: Compass },
-    { to: "/tasks", label: "Task List", icon: CheckSquare },
+    { to: "/tasks", label: "Tasks", icon: CheckSquare },
+    { to: "/insights", label: "Insights", icon: TrendingUp },
     { to: "/profile", label: "Profile", icon: User },
   ];
 

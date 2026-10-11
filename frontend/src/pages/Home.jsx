@@ -74,8 +74,37 @@ export function Home() {
         </div>
       </div>
 
+      {/* If no check-in today, friendly dashboard empty state banner */}
+      {!currentMood && (
+        <div className="rounded-3xl border border-teal-200/80 bg-gradient-to-r from-teal-50/90 via-cyan-50/50 to-white p-6 sm:p-7 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in duration-200">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-teal-600 text-white shadow-xs">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-base font-bold text-slate-800">
+                You haven't checked in with your mood today
+              </h3>
+              <p className="text-xs text-slate-600 max-w-xl">
+                Take 30 seconds to log how you're feeling. Your daily suggestions, task pacing, and AI recommendations will dynamically adapt to your energy.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              document.getElementById("mood-checkin-section")?.scrollIntoView({ behavior: "smooth" });
+            }}
+            className="shrink-0 px-4 py-2.5 rounded-2xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition shadow-xs cursor-pointer flex items-center gap-1.5"
+          >
+            <span>Check In Now</span>
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       {/* Primary Mood Check-in Widget */}
-      <section aria-label="Mood Check-in">
+      <section id="mood-checkin-section" aria-label="Mood Check-in">
         <MoodCheckin />
       </section>
 

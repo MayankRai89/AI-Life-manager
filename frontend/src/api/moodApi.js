@@ -21,6 +21,11 @@ export const moodApi = {
     return response.data;
   },
 
+  getMoodInsights: async (days = 7) => {
+    const response = await apiClient.get("/moods/insights", { params: { days } });
+    return response.data;
+  },
+
   getMoodById: async (id) => {
     const response = await apiClient.get(`/moods/${id}`);
     return response.data;

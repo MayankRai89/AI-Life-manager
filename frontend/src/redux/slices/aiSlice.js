@@ -51,6 +51,30 @@ export const sendAIChatMessage = createAsyncThunk(
   }
 );
 
+export const submitPlanFeedback = createAsyncThunk(
+  "ai/submitPlanFeedback",
+  async ({ planId, rating, reason }, { rejectWithValue }) => {
+    try {
+      const data = await aiApi.submitPlanFeedback(planId, { rating, reason });
+      return data.data || data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message);
+    }
+  }
+);
+
+export const fetchAINudge = createAsyncThunk(
+  "ai/fetchAINudge",
+  async (minutesSinceLastBreak = 0, { rejectWithValue }) => {
+    try {
+      const data = await aiApi.getNudge(minutesSinceLastBreak);
+      return data.data || data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message);
+    }
+  }
+);
+
 const aiSlice = createSlice({
   name: "ai",
   initialState: {
@@ -71,6 +95,9 @@ const aiSlice = createSlice({
     loadingNudge: false,
     loadingChat: false,
     error: null,
+    planError: null,
+    scoresError: null,
+    nudgeError: null,
   },
   reducers: {
     dismissNudge: (state) => {
@@ -85,6 +112,9 @@ const aiSlice = createSlice({
     },
     clearAIError: (state) => {
       state.error = null;
+      state.planError = null;
+      state.scoresError = null;
+      state.nudgeError = null;
     },
   },
   extraReducers: (builder) => {
@@ -93,9 +123,11 @@ const aiSlice = createSlice({
       .addCase(fetchAIDayPlan.pending, (state) => {
         state.loadingPlan = true;
         state.error = null;
+        state.planError = null;
       })
       .addCase(fetchAIDayPlan.fulfilled, (state, action) => {
         state.loadingPlan = false;
+        state.planError = null;
         if (action.payload) {
           state.dayPlan = {
             ...state.dayPlan,
@@ -104,6 +136,16 @@ const aiSlice = createSlice({
               action.payload.summary ||
               action.payload.suggestion ||
               state.dayPlan.summary,
+            _id:
+              action.payload._id ||
+              action.payload.plan?._id ||
+              state.dayPlan?._id,
+            plan: action.payload.plan || state.dayPlan?.plan,
+            feedback:
+              action.payload.feedback ||
+              action.payload.plan?.feedback ||
+              state.dayPlan?.feedback ||
+              null,
             orderedTaskIds:
               action.payload.orderedTaskIds || state.dayPlan.orderedTaskIds,
             focusTasks:
@@ -124,20 +166,35 @@ const aiSlice = createSlice({
       })
       .addCase(fetchAIDayPlan.rejected, (state, action) => {
         state.loadingPlan = false;
-        // Keep current plan as graceful fallback
+        state.planError =
+          action.payload || "Unable to generate daily suggestion. Please try again.";
+      })
+      // Submit Plan Feedback
+      .addCase(submitPlanFeedback.fulfilled, (state, action) => {
+        const fb = action.payload?.feedback || action.payload?.plan?.feedback;
+        if (fb && state.dayPlan) {
+          state.dayPlan.feedback = fb;
+          if (state.dayPlan.plan) {
+            state.dayPlan.plan.feedback = fb;
+          }
+        }
       })
       // Prioritize Tasks
       .addCase(fetchAIPrioritizedTasks.pending, (state) => {
         state.loadingScores = true;
+        state.scoresError = null;
       })
       .addCase(fetchAIPrioritizedTasks.fulfilled, (state, action) => {
         state.loadingScores = false;
+        state.scoresError = null;
         if (action.payload) {
           state.taskScores = action.payload;
         }
       })
-      .addCase(fetchAIPrioritizedTasks.rejected, (state) => {
+      .addCase(fetchAIPrioritizedTasks.rejected, (state, action) => {
         state.loadingScores = false;
+        state.scoresError =
+          action.payload || "Unable to prioritize tasks. Please try again.";
       })
       // Chat
       .addCase(sendAIChatMessage.pending, (state) => {
@@ -158,6 +215,24 @@ const aiSlice = createSlice({
       })
       .addCase(sendAIChatMessage.rejected, (state) => {
         state.loadingChat = false;
+      })
+      // Nudges
+      .addCase(fetchAINudge.pending, (state) => {
+        state.loadingNudge = true;
+        state.nudgeError = null;
+      })
+      .addCase(fetchAINudge.fulfilled, (state, action) => {
+        state.loadingNudge = false;
+        state.nudgeError = null;
+        if (action.payload) {
+          state.latestNudge = action.payload;
+          state.isNudgeDismissed = false;
+        }
+      })
+      .addCase(fetchAINudge.rejected, (state, action) => {
+        state.loadingNudge = false;
+        state.nudgeError =
+          action.payload || "Could not retrieve wellness nudge.";
       });
   },
 });

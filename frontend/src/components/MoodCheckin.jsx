@@ -51,7 +51,7 @@ const CAPACITY_OPTIONS = [
   },
 ];
 
-export function MoodCheckin() {
+export function MoodCheckin({ onSuccess, className = "" } = {}) {
   const dispatch = useDispatch();
   const { currentMood, selectedMoodPreset, submitting, justSubmitted } = useSelector(
     (state) => state.mood
@@ -130,12 +130,15 @@ export function MoodCheckin() {
       // Debounce the automatic fetchAIDayPlan call
       debouncedFetchDayPlan();
       dispatch(fetchAIPrioritizedTasks());
+      if (onSuccess) {
+        onSuccess(res.payload);
+      }
       setTimeout(() => setFeedbackMsg(""), 4500);
     }
   };
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-teal-100/80 bg-gradient-to-b from-white/95 to-teal-50/30 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-md">
+    <div className={`relative overflow-hidden rounded-3xl border border-teal-100/80 bg-gradient-to-b from-white/95 to-teal-50/30 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-md ${className}`}>
       {/* Magic UI / Aceternity inspired subtle background glow */}
       <div className="pointer-events-none absolute -top-24 -right-24 h-56 w-56 rounded-full bg-teal-200/25 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-24 -left-24 h-56 w-56 rounded-full bg-cyan-200/20 blur-3xl" />

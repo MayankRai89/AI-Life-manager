@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchAIDayPlan } from "../redux/slices/aiSlice";
+import { fetchAIDayPlan, submitPlanFeedback } from "../redux/slices/aiSlice";
 import { addTask } from "../redux/slices/taskSlice";
 import {
   Sparkles,
@@ -20,6 +20,9 @@ import {
   Coffee,
   Check,
   Plus,
+  ThumbsUp,
+  ThumbsDown,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "./ui/Button";
 import { Badge } from "./ui/Badge";
@@ -351,6 +354,76 @@ export function DayPlanCard({
   const isLoading =
     propIsLoading !== undefined ? propIsLoading : reduxAI.loadingPlan;
 
+  const planId = activePlan._id || activePlan.plan?._id || activePlan.id;
+  const initialFeedback = activePlan.feedback || activePlan.plan?.feedback;
+
+  const [selectedRating, setSelectedRating] = useState(initialFeedback?.rating || null);
+  const [reasonInput, setReasonInput] = useState(initialFeedback?.reason || "");
+  const [showReasonInput, setShowReasonInput] = useState(false);
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(!!initialFeedback?.rating);
+
+  useEffect(() => {
+    if (initialFeedback?.rating) {
+      setSelectedRating(initialFeedback.rating);
+      setReasonInput(initialFeedback.reason || "");
+      setFeedbackSubmitted(true);
+      setShowReasonInput(false);
+    } else {
+      setSelectedRating(null);
+      setReasonInput("");
+      setFeedbackSubmitted(false);
+      setShowReasonInput(false);
+    }
+  }, [initialFeedback?.rating, initialFeedback?.reason, planId]);
+
+  const handleRate = async (rating) => {
+    if (rating === "down") {
+      setSelectedRating("down");
+      setShowReasonInput(true);
+      return;
+    }
+
+    setSelectedRating("up");
+    setShowReasonInput(false);
+    setIsSubmittingFeedback(true);
+    try {
+      if (planId) {
+        await dispatch(submitPlanFeedback({ planId, rating: "up", reason: "" })).unwrap();
+      }
+      setFeedbackSubmitted(true);
+    } catch (err) {
+      console.error("Failed to submit feedback:", err);
+      setFeedbackSubmitted(true);
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  };
+
+  const handleDownSubmit = async (e) => {
+    if (e) e.preventDefault();
+    setIsSubmittingFeedback(true);
+    try {
+      if (planId) {
+        await dispatch(
+          submitPlanFeedback({
+            planId,
+            rating: "down",
+            reason: reasonInput.trim(),
+          })
+        ).unwrap();
+      }
+      setFeedbackSubmitted(true);
+      setShowReasonInput(false);
+    } catch (err) {
+      console.error("Failed to submit down feedback:", err);
+      setFeedbackSubmitted(true);
+      setShowReasonInput(false);
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  };
+
   const handleRefresh = () => {
     if (propOnRefresh) {
       propOnRefresh();
@@ -453,6 +526,35 @@ export function DayPlanCard({
 
   if (isLoading) {
     return <DayPlanSkeleton />;
+  }
+
+  // Friendly error fallback with "Try again" button
+  if (reduxAI.planError && !activePlan?.summary) {
+    return (
+      <div className="rounded-3xl border border-rose-200/80 bg-gradient-to-b from-white to-rose-50/20 p-8 text-center space-y-4 shadow-sm">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 border border-rose-200/60">
+          <AlertCircle className="h-6 w-6" />
+        </div>
+        <div className="space-y-1">
+          <h3 className="text-base font-bold text-slate-800">
+            Couldn't load today's plan
+          </h3>
+          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            {typeof reduxAI.planError === "string" && !reduxAI.planError.includes("object")
+              ? reduxAI.planError
+              : "Our AI assistant had trouble preparing your daily rhythm. Please try again in a moment."}
+          </p>
+        </div>
+        <Button
+          type="button"
+          onClick={handleRefresh}
+          className="gap-2 text-xs"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+          <span>Try again</span>
+        </Button>
+      </div>
+    );
   }
 
   // Parse content into clean, structured human-readable sections
@@ -768,6 +870,90 @@ export function DayPlanCard({
           </div>
         </div>
       )}
+
+      {/* Was this plan helpful? Feedback Section */}
+      <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2 text-slate-600 font-medium">
+          <span>Was this plan helpful?</span>
+          {feedbackSubmitted && (
+            <span className="inline-flex items-center gap-1 text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full font-semibold text-[11px] border border-teal-200/60 animate-in fade-in">
+              <Check className="h-3 w-3 text-teal-600" />
+              Thanks for the feedback
+            </span>
+          )}
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+          {!feedbackSubmitted ? (
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => handleRate("up")}
+                disabled={isSubmittingFeedback}
+                aria-label="Thumbs up"
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition cursor-pointer shadow-2xs",
+                  selectedRating === "up"
+                    ? "bg-teal-600 text-white border-teal-600"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300"
+                )}
+              >
+                <ThumbsUp className="h-3.5 w-3.5" />
+                <span>Yes</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRate("down")}
+                disabled={isSubmittingFeedback}
+                aria-label="Thumbs down"
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition cursor-pointer shadow-2xs",
+                  selectedRating === "down"
+                    ? "bg-rose-50 text-rose-700 border-rose-300"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300"
+                )}
+              >
+                <ThumbsDown className="h-3.5 w-3.5" />
+                <span>No</span>
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 text-slate-500 text-xs">
+              {selectedRating === "up" ? (
+                <span className="inline-flex items-center gap-1.5 text-teal-700 font-semibold bg-teal-50/80 px-2.5 py-1 rounded-lg border border-teal-200/50">
+                  <ThumbsUp className="h-3.5 w-3.5 fill-teal-600 text-teal-600" />
+                  Helpful
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 text-rose-700 font-semibold bg-rose-50/80 px-2.5 py-1 rounded-lg border border-rose-200/50">
+                  <ThumbsDown className="h-3.5 w-3.5 fill-rose-600 text-rose-600" />
+                  Not helpful{reasonInput ? `: "${reasonInput}"` : ""}
+                </span>
+              )}
+            </div>
+          )}
+
+          {showReasonInput && !feedbackSubmitted && (
+            <form onSubmit={handleDownSubmit} className="flex items-center gap-1.5 w-full sm:w-auto animate-in fade-in duration-200">
+              <input
+                type="text"
+                value={reasonInput}
+                onChange={(e) => setReasonInput(e.target.value)}
+                maxLength={200}
+                placeholder="What could be improved? (optional)"
+                className="text-xs px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-teal-500 w-full sm:w-56"
+              />
+              <button
+                type="submit"
+                disabled={isSubmittingFeedback}
+                className="shrink-0 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold cursor-pointer transition shadow-2xs"
+              >
+                Submit
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

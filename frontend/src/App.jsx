@@ -7,6 +7,9 @@ import Tasks from "./pages/Tasks";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Onboarding from "./pages/Onboarding";
+import Insights from "./pages/Insights";
+import ColdStartBanner from "./components/ColdStartBanner";
 import { MessageSquareHeart, X, Send, Sparkles } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { sendAIChatMessage } from "./redux/slices/aiSlice";
@@ -29,6 +32,9 @@ export function App() {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-800 antialiased selection:bg-teal-100 selection:text-teal-900">
+      {/* Global Cold-Start Alert for >4s requests */}
+      <ColdStartBanner />
+
       {/* Show in-app Navbar on non-landing pages */}
       {!isLanding && <Navbar />}
 
@@ -37,9 +43,11 @@ export function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/dashboard" element={<Home />} />
           <Route path="/tasks" element={<Tasks />} />
+          <Route path="/insights" element={<Insights />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/onboarding" element={<Onboarding />} />
         </Routes>
       </main>
 

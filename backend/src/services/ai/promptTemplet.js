@@ -333,3 +333,52 @@ User's message: "${message}"
 
 Respond helpfully, concisely, and in a warm, coaching tone. If the message relates to tasks, mood, wellness, or productivity — give specific actionable advice. Keep response under 300 words.`;
 };
+
+/**
+ * @template NudgePrompt
+ * @desc     Generates a brief, warm 1-2 sentence wellness nudge
+ * @param    {Object} params
+ * @param    {Object} params.user
+ * @param    {Object} params.moodCheckIn - latest mood check-in (optional)
+ * @param    {string} params.capacityLevel - capacity level
+ * @param    {number} params.tasksCompletedToday - count of tasks completed today
+ * @param    {number} params.minutesSinceLastBreak - minutes since last break
+ * @returns  {{ system: string, user: string }}
+ */
+export const buildNudgePrompt = ({
+  user,
+  moodCheckIn,
+  capacityLevel,
+  tasksCompletedToday = 0,
+  minutesSinceLastBreak = 0,
+}) => {
+  const healthFlags = buildHealthFlags(user);
+  const healthContext =
+    healthFlags.length > 0
+      ? `Health flags (wellness adaptations only, no diagnoses):\n${healthFlags.map((f) => `- ${f}`).join("\n")}\n`
+      : "";
+
+  const system = `${SYSTEM_PERSONA}
+You give gentle, in-the-moment wellness and focus nudges.
+Your output must be JSON only matching the schema:
+{
+  "nudge": "1-2 warm, supportive sentences",
+  "category": "eat" | "move" | "rest" | "hydrate" | "encouragement"
+}`;
+
+  const userPrompt = `Generate a warm, mindful nudge for ${user?.name || "the user"}.
+Current State:
+- Latest Mood: ${moodCheckIn?.mood || "balanced"} (Mood Score: ${moodCheckIn?.moodScore || 6}/10)
+- Energy Level: ${moodCheckIn?.energyLevel || 6}/10, Stress Level: ${moodCheckIn?.stressLevel || 4}/10
+- Capacity Level: ${capacityLevel || moodCheckIn?.capacityLevel || "normal"}
+- Tasks Completed Today: ${tasksCompletedToday}
+- Minutes Since Last Break: ${minutesSinceLastBreak} minutes
+${healthContext}
+Guidelines:
+1. Provide 1 to 2 warm, empathetic, actionable sentences.
+2. Choose exactly one category from: "eat", "move", "rest", "hydrate", "encouragement".
+3. Return valid JSON only, no markdown formatting.`;
+
+  return { system, user: userPrompt };
+};
+

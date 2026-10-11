@@ -3,6 +3,7 @@ import * as aiService from "../services/ai/ai.service.js";
 import * as moodService from "../services/mood.service.js";
 import * as taskService from "../services/task.service.js";
 import DayPlan from "../model/dayPlan.model.js";
+import Task from "../model/task.model.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { AppError } from "../middleware/errorHandler.middleware.js";
 
@@ -41,6 +42,7 @@ export const getDailySuggestion = asyncHandler(async (req, res) => {
         status: "success",
         data: {
           plan: existingPlan,
+          feedback: existingPlan.feedback || null,
           suggestion: existingPlan.summary,
           summary: existingPlan.summary,
           orderedTaskIds: existingPlan.orderedTaskIds || [],
@@ -76,6 +78,7 @@ export const getDailySuggestion = asyncHandler(async (req, res) => {
         status: "success",
         data: {
           plan: recentPlan,
+          feedback: recentPlan.feedback || null,
           suggestion: recentPlan.summary,
           summary: recentPlan.summary,
           orderedTaskIds: recentPlan.orderedTaskIds || [],
@@ -225,6 +228,7 @@ export const getDailySuggestion = asyncHandler(async (req, res) => {
     status: "success",
     data: {
       plan: savedPlan,
+      feedback: savedPlan.feedback || null,
       suggestion: summary,
       summary,
       orderedTaskIds,
@@ -361,3 +365,87 @@ export const chat = asyncHandler(async (req, res) => {
     },
   });
 });
+
+/**
+ * @desc    Submit feedback (thumbs up/down + optional reason) for a day plan
+ * @route   PATCH /api/ai/daily-suggestion/:id/feedback
+ * @access  Private
+ */
+export const rateDayPlanFeedback = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { rating, reason } = req.body;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new AppError("Invalid day plan ID", 400);
+  }
+
+  const plan = await DayPlan.findOne({ _id: id, userId: req.user._id });
+  if (!plan) {
+    throw new AppError("Day plan not found or unauthorized", 404);
+  }
+
+  plan.feedback = {
+    rating,
+    reason: reason ? String(reason).trim().slice(0, 200) : "",
+    ratedAt: new Date(),
+  };
+
+  await plan.save();
+
+  res.status(200).json({
+    status: "success",
+    message: "Feedback submitted successfully",
+    data: {
+      plan,
+      feedback: plan.feedback,
+    },
+  });
+});
+
+/**
+ * @desc    Get an empathetic in-app wellness nudge
+ * @route   GET /api/ai/nudge
+ * @access  Private
+ */
+export const getNudge = asyncHandler(async (req, res) => {
+  const user = req.user;
+  const minutesSinceLastBreak = parseInt(req.query.minutesSinceLastBreak, 10) || 0;
+
+  // 1. Fetch latest mood check-in
+  const latestMood = await moodService.getLatestMoodCheckIn(user._id);
+
+  // 2. Count tasks completed today
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const tasksCompletedToday = await Task.countDocuments({
+    userId: user._id,
+    status: "completed",
+    completedAt: { $gte: startOfDay },
+  });
+
+  const capacityLevel = latestMood?.capacityLevel || "normal";
+
+  // 3. Call AI service for nudge
+  const result = await aiService.getNudge({
+    user,
+    moodCheckIn: latestMood,
+    capacityLevel,
+    tasksCompletedToday,
+    minutesSinceLastBreak,
+  });
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      nudge: result.data.nudge,
+      category: result.data.category,
+      meta: {
+        providerUsed: result.providerUsed,
+        latencyMs: result.latencyMs,
+      },
+    },
+  });
+});
+
+

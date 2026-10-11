@@ -125,3 +125,25 @@ export const getMoodAnalytics = asyncHandler(async (req, res) => {
     data: analytics,
   });
 });
+
+/**
+ * @desc    Get 7-day mood insights and completion by capacity and mood
+ * @route   GET /api/moods/insights
+ * @access  Private
+ */
+export const getMoodInsights = asyncHandler(async (req, res) => {
+  const days = req.query.days || 7;
+  const timezone = req.user?.timezone || "UTC";
+
+  const insights = await moodService.getMoodInsights(
+    req.user._id,
+    days,
+    timezone
+  );
+
+  res.status(200).json({
+    status: "success",
+    data: insights,
+  });
+});
+
