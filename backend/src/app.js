@@ -94,6 +94,8 @@ app.use("/api", generalLimiter);
 // Feature Routes with specific rate limiters
 app.use("/api/auth/login", authLimiter);
 app.use("/api/auth/register", authLimiter);
+app.use("/api/auth/forgot-password", authLimiter);
+app.use("/api/auth/reset-password", authLimiter);
 app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/moods", moodRoutes);
