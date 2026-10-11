@@ -79,6 +79,15 @@ export function Login() {
               required
             />
 
+            <div className="flex justify-end">
+              <Link
+                to="/forgot-password"
+                className="text-xs font-medium text-teal-600 hover:text-teal-700 hover:underline"
+              >
+                Forgot password?
+              </Link>
+            </div>
+
             <Button
               type="submit"
               isLoading={loading}

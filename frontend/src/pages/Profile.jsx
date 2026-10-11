@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { saveUserProfile, updateUserProfile } from "../redux/slices/authSlice";
+import { saveUserProfile, updateUserProfile, logout } from "../redux/slices/authSlice";
+import authApi from "../api/authApi";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Card } from "../components/ui/Card";
@@ -18,6 +19,8 @@ import {
   AlertCircle,
   Plus,
   X,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 
 export function Profile() {
@@ -85,6 +88,34 @@ export function Profile() {
 
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  // Account deletion state
+  const navigate = useNavigate();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmWord, setDeleteConfirmWord] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
+  const handleDeleteAccount = async (e) => {
+    e.preventDefault();
+    if (deleteConfirmWord !== "DELETE" || !deletePassword || isDeleting) return;
+
+    setIsDeleting(true);
+    setDeleteError("");
+
+    try {
+      await authApi.deleteAccount(deletePassword);
+      dispatch(logout());
+      navigate("/login");
+    } catch (err) {
+      setDeleteError(
+        err.response?.data?.message ||
+          "Failed to delete account. Please verify your password."
+      );
+      setIsDeleting(false);
+    }
+  };
 
   const addTag = (type, val, setter, list) => {
     const trimmed = val.trim();
