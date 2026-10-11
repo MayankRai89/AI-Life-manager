@@ -1,5 +1,10 @@
+import crypto from "crypto";
 import { generateToken } from "../services/auth.services.js";
 import User from "../model/user.model.js";
+import Task from "../model/task.model.js";
+import MoodCheckIn from "../model/mood.model.js";
+import DayPlan from "../model/dayPlan.model.js";
+import sendEmail from "../utils/sendEmail.js";
 
 const getCookieOptions = () => {
   const isSecure =
@@ -318,4 +323,187 @@ export const updateProfile = async (req, res) => {
     });
   }
 };
+
+/**
+ * @desc    Request password reset link
+ * @route   POST /api/auth/forgot-password
+ * @access  Public (Rate limited)
+ */
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const genericResponse = {
+      status: "success",
+      message:
+        "If an account with that email exists, a password reset link has been sent.",
+    };
+
+    if (!email) {
+      return res.status(200).json(genericResponse);
+    }
+
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    if (!user) {
+      return res.status(200).json(genericResponse);
+    }
+
+    // Generate random 32-byte token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+
+    // Store SHA-256 hash and 30-min expiry
+    user.passwordResetToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+    user.passwordResetExpires = new Date(Date.now() + 30 * 60 * 1000);
+
+    await user.save({ validateBeforeSave: false });
+
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+    const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
+
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: "AI Life Manager - Password Reset Request",
+        text: `Hello ${user.name || "there"},\n\nYou requested a password reset. Please click or open this link in your browser to set a new password:\n\n${resetUrl}\n\nThis link is valid for 30 minutes. If you did not request this, please safely ignore this email.\n\nWarm regards,\nAI Life Manager Team`,
+      });
+    } catch (mailError) {
+      console.error("Failed to send password reset email:", mailError);
+      user.passwordResetToken = undefined;
+      user.passwordResetExpires = undefined;
+      await user.save({ validateBeforeSave: false });
+    }
+
+    return res.status(200).json(genericResponse);
+  } catch (error) {
+    console.error("Forgot Password Error:", error);
+    return res.status(200).json({
+      status: "success",
+      message:
+        "If an account with that email exists, a password reset link has been sent.",
+    });
+  }
+};
+
+/**
+ * @desc    Reset password using valid token
+ * @route   POST /api/auth/reset-password/:token
+ * @access  Public (Rate limited)
+ */
+export const resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({
+        status: "error",
+        message: "Reset token and new password are required.",
+      });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({
+        status: "error",
+        message: "Password must be at least 8 characters long.",
+      });
+    }
+
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+
+    const user = await User.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        status: "error",
+        message: "Password reset link is invalid or has expired.",
+      });
+    }
+
+    // Set new password (pre-save middleware handles bcrypt hashing)
+    user.password = password;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
+
+    return res.status(200).json({
+      status: "success",
+      message:
+        "Password reset successfully. You can now log in with your new password.",
+    });
+  } catch (error) {
+    console.error("Reset Password Error:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Error resetting password. Please try again.",
+    });
+  }
+};
+
+/**
+ * @desc    Delete user account and cascade delete all personal data
+ * @route   DELETE /api/auth/me
+ * @access  Private
+ */
+export const deleteMe = async (req, res) => {
+  try {
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({
+        status: "error",
+        message: "Please enter your password to confirm account deletion.",
+      });
+    }
+
+    const user = await User.findById(req.user._id).select("+password");
+    if (!user) {
+      return res.status(404).json({
+        status: "error",
+        message: "User not found.",
+      });
+    }
+
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({
+        status: "error",
+        message: "Incorrect password. Account deletion aborted.",
+      });
+    }
+
+    const userId = req.user._id;
+
+    // Delete user and all of their tasks, mood check-ins and day plans
+    await Promise.all([
+      Task.deleteMany({ user: userId }),
+      MoodCheckIn.deleteMany({ user: userId }),
+      DayPlan.deleteMany({ user: userId }),
+      User.findByIdAndDelete(userId),
+    ]);
+
+    // Clear auth cookie
+    res.clearCookie("token", getCookieOptions());
+
+    return res.status(200).json({
+      status: "success",
+      message:
+        "Your account and all associated data have been permanently deleted.",
+    });
+  } catch (error) {
+    console.error("Delete Account Error:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "An error occurred while deleting your account. Please try again.",
+    });
+  }
+};
+
 
