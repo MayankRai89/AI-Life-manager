@@ -9,6 +9,8 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Onboarding from "./pages/Onboarding";
 import Insights from "./pages/Insights";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import ColdStartBanner from "./components/ColdStartBanner";
 import useNudges from "./hooks/useNudges";
 import { MessageSquareHeart, X, Send, Sparkles } from "lucide-react";
@@ -51,6 +53,8 @@ export function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/onboarding" element={<Onboarding />} />
         </Routes>
       </main>

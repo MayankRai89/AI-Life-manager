@@ -620,6 +620,119 @@ export function Profile() {
           </Button>
         </div>
       </form>
+
+      {/* Danger Zone: Account Deletion */}
+      <Card className="p-6 border-rose-200/80 bg-rose-50/30 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h2 className="text-sm font-bold text-rose-800 flex items-center gap-2">
+              <Trash2 className="h-4 w-4 text-rose-600" />
+              Delete Account
+            </h2>
+            <p className="text-xs text-slate-600 max-w-xl">
+              Permanently remove your account and all associated tasks, mood check-ins, and AI recommendations. This action cannot be reversed.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setShowDeleteModal(true);
+              setDeleteConfirmWord("");
+              setDeletePassword("");
+              setDeleteError("");
+            }}
+            className="self-start sm:self-center shrink-0 rounded-xl border border-rose-300 bg-white px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 hover:border-rose-400 transition cursor-pointer"
+          >
+            Delete my account
+          </button>
+        </div>
+      </Card>
+
+      {/* Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-start gap-3">
+              <div className="rounded-xl bg-rose-100 p-2 text-rose-600 shrink-0">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-slate-900">
+                  Delete your account?
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  This action is permanent and irreversible. All your personal data, mood history, tasks, and day plans will be immediately and completely erased.
+                </p>
+              </div>
+            </div>
+
+            {deleteError && (
+              <div className="rounded-xl bg-rose-50 border border-rose-200 p-3 text-xs text-rose-600 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{deleteError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleDeleteAccount} className="space-y-4 pt-1">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700">
+                  Type <span className="font-mono text-rose-600 font-bold">DELETE</span> to confirm:
+                </label>
+                <input
+                  type="text"
+                  placeholder="DELETE"
+                  value={deleteConfirmWord}
+                  onChange={(e) => {
+                    setDeleteError("");
+                    setDeleteConfirmWord(e.target.value);
+                  }}
+                  className="w-full h-10 rounded-xl border border-slate-200 px-3 text-xs font-mono text-slate-800 focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/10"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700">
+                  Enter your current password:
+                </label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={deletePassword}
+                  onChange={(e) => {
+                    setDeleteError("");
+                    setDeletePassword(e.target.value);
+                  }}
+                  className="w-full h-10 rounded-xl border border-slate-200 px-3 text-xs text-slate-800 focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/10"
+                  required
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(false)}
+                  disabled={isDeleting}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={
+                    deleteConfirmWord !== "DELETE" ||
+                    !deletePassword ||
+                    isDeleting
+                  }
+                  className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer shadow-xs"
+                >
+                  {isDeleting ? "Deleting..." : "Permanently Delete"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
