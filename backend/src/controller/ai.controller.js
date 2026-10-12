@@ -6,7 +6,7 @@ import DayPlan from "../model/dayPlan.model.js";
 import Task from "../model/task.model.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { AppError } from "../middleware/errorHandler.middleware.js";
-import { PROMPT_VERSION } from "../services/ai/promptTemplet.js";
+import { PROMPT_VERSION } from "../services/ai/promptTemplate.js";
 
 /**
  * @desc    Get a personalized daily plan based on current mood + tasks.
