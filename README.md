@@ -57,6 +57,40 @@ npm run dev              # Starts Vite dev server on http://localhost:5173
 
 ---
 
+## 🛡 Admin Dashboard & Feedback Telemetry
+
+The platform includes a privacy-preserving admin telemetry service and interactive UI (`/admin`) for evaluating AI day plan quality.
+
+### 1. Promoting a User to Admin
+User roles default to `"user"`. The `"admin"` role cannot be set or updated via any public API route (registration and profile update strictly ignore role payloads).
+
+To promote a user to administrator:
+```bash
+cd backend
+npm run make-admin -- user@example.com
+# or: node scripts/makeAdmin.js user@example.com
+```
+
+### 2. Prompt Versioning (`PROMPT_VERSION`)
+Day plans automatically record the active prompt version on each generated document via `promptVersion: { type: String, default: "v0" }`.
+You can configure the active version in your environment:
+```env
+PROMPT_VERSION=v1
+```
+
+### 3. Read-Only Admin Endpoints
+Mounted under `/api/admin` and protected by authentication (`protect`), role checking (`adminOnly`), and rate limiting (`adminLimiter`: 60 req/min):
+
+| Method | Endpoint | Query Parameters | Expected Response | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `GET` | `/api/admin/feedback` | `page` (default 1), `limit` (default 20, max 50), `rating` (`up`\|`down`), `provider`, `promptVersion` | `200 OK` `{ status: "success", data: { items: [...], pagination: { ... } } }` | Anonymized paginated day plan feedback items. Strips all PII, joins capacity level, prioritizes thumbs-down ratings first. |
+| `GET` | `/api/admin/stats` | `days` (default 30, max 90) | `200 OK` `{ status: "success", data: { totalPlans, ratedPlans, upCount, downCount, byProvider, byMood, byCapacityLevel, byPromptVersion, byDay } }` | Aggregated plan ratings and multidimensional feedback statistics. |
+
+> [!NOTE]
+> **Strict Privacy Safeguard**: Admin endpoints never expose user names, emails, raw user IDs, personal journal notes, tasks, or health conditions. An 8-character HMAC-SHA256 hash (`anonId`) is generated using `JWT_SECRET` for anonymous tracking.
+
+---
+
 ## 🐳 Run Entire Project with Docker (One-Command Setup)
 
 The repository provides a production-grade **Docker Compose** setup orchestrating:

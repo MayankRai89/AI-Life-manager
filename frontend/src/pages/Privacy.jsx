@@ -67,7 +67,7 @@ export function Privacy() {
               <strong>Rhythm & Schedule:</strong> Wake time, sleep time, and target working hours.
             </li>
             <li>
-              <strong>Day Plans:</strong> Generated daily schedules and your feedback ratings.
+              <strong>Day Plans:</strong> Generated daily schedules and your feedback ratings. Plan ratings and the reasons you write are reviewed in aggregate by the app owner to improve plans, without your name or email.
             </li>
           </ul>
         </section>
