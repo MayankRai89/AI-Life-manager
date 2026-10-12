@@ -135,16 +135,25 @@ backend/
     │   ├── mood.routes.js         # /api/moods endpoints
     │   └── task.routes.js         # /api/tasks endpoints
     ├── services/
-    │   ├── auth.services.js       # Token signing & verification helpers
+    │   ├── auth.service.js        # Token signing & verification helpers
     │   ├── mood.service.js        # Analytics calculation & mood aggregations
     │   ├── task.service.js        # Task filtering, pagination & status logic
     │   └── ai/
     │       ├── ai.service.js      # Multi-provider fallback/fanout engine & JSON parser
-    │       ├── promptTemplet.js   # Dynamic prompt builders with medical/mood context
+    │       ├── promptTemplate.js  # Dynamic prompt builders with medical/mood context
     │       └── temperature.service.js # Dynamic temperature selector by task type
     └── utils/
         ├── asyncHandler.js        # Asynchronous route wrapper
-        └── Logger.js              # Winston / structured console logging
+        └── logger.js              # Structured console logging
+├── tests/                         # Vitest automated test suite (in-memory MongoDB)
+│   ├── setup.js                   # Test environment bootstrap & in-memory Mongo setup
+│   ├── auth.test.js               # Registration, cookie httpOnly, validation & role protection
+│   ├── admin.test.js              # RBAC verification & telemetry privacy guarantees
+│   ├── mood.test.js               # Mood CRUD & frontend/backend enum sync
+│   ├── ai.service.test.js         # Multi-provider fallback orchestrator unit tests
+│   ├── privacy.test.js            # Health flag privacy sanitization
+│   └── errorHandler.test.js       # Production error formatting & validation handling
+└── vitest.config.js               # Vitest runner configuration
 ```
 
 ---
