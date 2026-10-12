@@ -52,8 +52,12 @@ jobs:
         run: npm ci || npm install
 
       - name: Syntax & Structure Validation
+        run: npm run check
+
+      - name: Run Backend Automated Tests
         run: npm test
 
+      # Dependency security audit: left non-blocking (|| true) for now; should be made strict after current findings are reviewed
       - name: Dependency Security Audit
         run: npm audit --audit-level=high || true
 

@@ -28,6 +28,7 @@ import {
   Tag,
   Search,
   AlertCircle,
+  CheckSquare,
 } from "lucide-react";
 
 export function TaskList({ showHeader = true, maxItems = null }) {

@@ -5,6 +5,8 @@ export function VoiceInputButton({ onResult, lang = "en-IN", className = "" }) {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
 
+  useEffect(() => () => recognitionRef.current?.abort(), []);
+
   const SpeechRecognition =
     typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition);
 
@@ -35,8 +37,6 @@ export function VoiceInputButton({ onResult, lang = "en-IN", className = "" }) {
       setIsListening(false);
     }
   };
-
-  useEffect(() => () => recognitionRef.current?.abort(), []);
 
   return (
     <button
