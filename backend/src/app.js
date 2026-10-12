@@ -8,6 +8,7 @@ import authRoutes from "./routes/auth.routes.js";
 import taskRoutes from "./routes/task.routes.js";
 import moodRoutes from "./routes/mood.routes.js";
 import aiRoutes from "./routes/ai.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 import { errorHandler } from "./middleware/errorHandler.middleware.js";
 import logger from "./utils/Logger.js";
 
@@ -100,6 +101,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/moods", moodRoutes);
 app.use("/api/ai", aiLimiter, aiRoutes);
+app.use("/api/admin", adminRoutes);
 
 // 404 Route Handler
 app.use((req, res, next) => {
