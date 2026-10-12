@@ -1,4 +1,4 @@
-import logger from "../../utils/Logger.js";
+import logger from "../../utils/logger.js";
 import { getTemperatureConfig } from "./temperature.service.js";
 import {
   dailySuggestionPrompt,
@@ -7,7 +7,7 @@ import {
   quickChatPrompt,
   buildContextExtractionPrompt,
   buildNudgePrompt,
-} from "./promptTemplet.js";
+} from "./promptTemplate.js";
 
 /** Per-provider fetch timeout — prevents one slow provider from blocking fallback/fanout */
 const PROVIDER_TIMEOUT_MS = 10000;

@@ -1,27 +1,5 @@
 # Dependencies
 node_modules/
-
-# Environment Variables
-.env
-.env.local
-.env.*.local
-*.env
-
-# Logs
-logs
-*.log
-npm-debug.log*
-
-# OS & Editor
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
-
-# Build
-dist/
-# Dependencies
-node_modules/
 /.pnp
 .pnp.js
 
@@ -32,6 +10,7 @@ node_modules/
 .env.test.local
 .env.production.local
 *.env
+!.env.example
 
 # Logs
 logs
@@ -42,11 +21,9 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# OS Files
+# OS & Editor
 .DS_Store
 Thumbs.db
-
-# IDE & Editors
 .vscode/
 .idea/
 *.suo
