@@ -24,6 +24,9 @@ export function Navbar() {
     { to: "/tasks", label: "Tasks", icon: CheckSquare },
     { to: "/insights", label: "Insights", icon: TrendingUp },
     { to: "/profile", label: "Profile", icon: User },
+    ...(user?.role === "admin"
+      ? [{ to: "/admin", label: "Admin", icon: Shield }]
+      : []),
   ];
 
   return (

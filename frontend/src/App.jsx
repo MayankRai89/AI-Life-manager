@@ -12,6 +12,7 @@ import Insights from "./pages/Insights";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Privacy from "./pages/Privacy";
+import AdminFeedback from "./pages/AdminFeedback";
 import ColdStartBanner from "./components/ColdStartBanner";
 import useNudges from "./hooks/useNudges";
 import { MessageSquareHeart, X, Send, Sparkles } from "lucide-react";
@@ -57,6 +58,7 @@ export function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/admin" element={<AdminFeedback />} />
           <Route path="/onboarding" element={<Onboarding />} />
         </Routes>
       </main>
