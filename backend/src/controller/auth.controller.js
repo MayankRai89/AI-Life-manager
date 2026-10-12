@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { generateToken } from "../services/auth.services.js";
+import { generateToken } from "../services/auth.service.js";
 import User from "../model/user.model.js";
 import Task from "../model/task.model.js";
 import MoodCheckIn from "../model/moodCheckIns.model.js";
