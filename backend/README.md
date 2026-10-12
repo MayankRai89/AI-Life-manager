@@ -795,6 +795,35 @@ To configure the CI/CD pipeline on GitHub, navigate to **Settings > Secrets and 
 | `SMTP_PASS`           | String | Optional                                       | SMTP authentication password                                  |
 | `EMAIL_FROM`          | String | `AI Life Manager <no-reply@ailifemanager.app>` | Outgoing sender display email                                 |
 
+---
+
+## 🧪 Automated Testing
+
+The backend includes a comprehensive automated test suite powered by **Vitest**, **supertest**, and **mongodb-memory-server**. Tests execute fully isolated without requiring external database connections, real API keys, or live network calls.
+
+### Running Tests
+
+```bash
+# Run all tests once
+npm test
+
+# Run tests in watch mode during development
+npm run test:watch
+
+# Run Node syntax check across entry points
+npm run check
+```
+
+### Test Coverage Areas
+
+1. **Authentication (`tests/auth.test.js`)**: Registration, HttpOnly cookie generation, minimum password length enforcement, login authentication, and immutable role protection.
+2. **Admin RBAC & Telemetry (`tests/admin.test.js`)**: Authorization boundaries (401 logged out, 403 user, 200 admin) and strict PII prevention.
+3. **Mood & Schema Compatibility (`tests/mood.test.js`)**: Mood check-in CRUD, Mongoose enum validation, and synchronization against frontend `MOOD_VALUES`.
+4. **AI Orchestrator (`tests/ai.service.test.js`)**: Multi-provider fallback runner, provider failure recovery, JSON schema validation, and order enforcement.
+5. **Privacy Safeguards (`tests/privacy.test.js`)**: Health flag abstraction and consent verification.
+6. **Error Handling (`tests/errorHandler.test.js`)**: Production stack suppression and Mongoose validation formatting.
+
+
 _\*At least one AI API key is required to utilize personalized Day Planning, Task Prioritization, and Chat capabilities._
 
 ---
