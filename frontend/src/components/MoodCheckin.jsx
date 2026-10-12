@@ -329,14 +329,14 @@ export function MoodCheckin({ onSuccess, className = "" } = {}) {
       </div>
 
       {/* Action CTA */}
-      <div className="relative z-10 mt-5 flex items-center justify-between border-t border-slate-200/50 pt-4">
-        <span className="text-xs text-slate-400">
+      <div className="relative z-10 mt-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-t border-slate-200/50 pt-4">
+        <span className="text-xs text-slate-500">
           Selected: <strong className="text-slate-700 capitalize">{activePreset.label}</strong>
         </span>
         <Button
           onClick={handleSubmit}
           isLoading={submitting}
-          className="rounded-xl px-5 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs tracking-wide shadow-md shadow-teal-600/15"
+          className="w-full sm:w-auto rounded-xl px-5 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs tracking-wide shadow-md shadow-teal-600/15 cursor-pointer"
         >
           Check In &amp; Recalibrate Plan
         </Button>

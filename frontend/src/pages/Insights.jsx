@@ -115,9 +115,9 @@ export function Insights() {
   }));
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/80 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-6">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700 border border-teal-200/50 mb-1.5">
             <TrendingUp className="h-3.5 w-3.5 text-teal-600" />
@@ -131,7 +131,7 @@ export function Insights() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => setDaysPeriod(7)}
@@ -196,7 +196,7 @@ export function Insights() {
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-teal-600 text-white shadow-xs">
               <Sparkles className="h-5 w-5" />
             </div>
-            <div className="space-y-0.5">
+            <div className="space-y-0.5 min-w-0">
               <h4 className="text-xs font-bold uppercase tracking-wider text-teal-800">
                 Pattern Takeaway
               </h4>
@@ -217,8 +217,8 @@ export function Insights() {
           )}
 
           {/* 7-Day Line Chart: Mood, Energy, Stress */}
-          <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-teal-600" />
@@ -229,7 +229,7 @@ export function Insights() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-4 text-xs font-semibold">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs font-semibold">
                 <span className="flex items-center gap-1.5 text-teal-700">
                   <span className="h-2.5 w-2.5 rounded-full bg-teal-600" />
                   Mood Score
@@ -245,7 +245,7 @@ export function Insights() {
               </div>
             </div>
 
-            <div className="h-64 sm:h-72 w-full pt-2">
+            <div className="h-64 sm:h-72 lg:h-80 w-full pt-2">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />

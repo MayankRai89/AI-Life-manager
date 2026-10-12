@@ -38,14 +38,14 @@ export function App() {
   const isLanding = location.pathname === "/";
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50 text-slate-800 antialiased selection:bg-teal-100 selection:text-teal-900">
+    <div className="flex min-h-screen w-full max-w-full overflow-x-hidden flex-col bg-slate-50 text-slate-800 antialiased selection:bg-teal-100 selection:text-teal-900">
       {/* Global Cold-Start Alert for >4s requests */}
       <ColdStartBanner />
 
       {/* Show in-app Navbar on non-landing pages */}
       {!isLanding && <Navbar />}
 
-      <main className="flex-1">
+      <main className="flex-1 pb-24 lg:pb-20 w-full max-w-full">
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/dashboard" element={<Home />} />
@@ -63,17 +63,18 @@ export function App() {
 
       {/* Floating AI Companion Drawer (accessible across app) */}
       {!isLanding && (
-        <div className="fixed bottom-6 right-6 z-40">
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40">
           {!isChatOpen ? (
             <button
               onClick={() => setIsChatOpen(true)}
               className="flex items-center gap-2 rounded-full bg-gradient-to-r from-teal-600 to-cyan-600 px-4 py-3 text-xs font-bold text-white shadow-lg shadow-teal-600/25 transition-all duration-200 hover:scale-105 hover:shadow-xl cursor-pointer"
+              aria-label="Open AI Companion"
             >
               <Sparkles className="h-4 w-4 animate-spin-slow" />
               <span>AI Companion</span>
             </button>
           ) : (
-            <div className="relative flex h-[480px] w-[350px] sm:w-[380px] flex-col rounded-3xl border border-slate-200/90 bg-white/95 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-4 duration-300">
+            <div className="relative flex h-[480px] max-h-[80vh] w-[calc(100vw-2rem)] max-w-[360px] sm:max-w-[380px] flex-col rounded-3xl border border-slate-200/90 bg-white/95 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-4 duration-300">
               {/* Companion Header */}
               <div className="flex items-center justify-between border-b border-slate-100 p-4">
                 <div className="flex items-center gap-2.5">
@@ -88,12 +89,16 @@ export function App() {
                     </span>
                   </div>
                 </div>
-                <button
-                  onClick={() => setIsChatOpen(false)}
-                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setIsChatOpen(false)}
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition cursor-pointer"
+                    title="Minimize chat"
+                    aria-label="Minimize AI Companion"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
 
               {/* Messages Thread */}

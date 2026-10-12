@@ -150,7 +150,7 @@ export function TaskList({ showHeader = true, maxItems = null }) {
     <div className="space-y-4">
       {/* Header and Controls */}
       {showHeader && (
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2">
           <div>
             <h3 className="text-lg font-bold text-slate-800">Your Action Items</h3>
             <p className="text-xs text-slate-500">
@@ -158,13 +158,13 @@ export function TaskList({ showHeader = true, maxItems = null }) {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={handlePrioritize}
               isLoading={loadingScores}
-              className="gap-1.5 border-teal-200 text-teal-700 hover:bg-teal-50"
+              className="gap-1.5 border-teal-200 text-teal-700 hover:bg-teal-50 cursor-pointer"
             >
               <Sparkles className="h-3.5 w-3.5 text-teal-600" />
               <span>{loadingScores ? "Tuning priorities..." : "Prioritize for today"}</span>
@@ -173,7 +173,7 @@ export function TaskList({ showHeader = true, maxItems = null }) {
             <Button
               size="sm"
               onClick={openCreateModal}
-              className="gap-1.5 bg-teal-600 text-white hover:bg-teal-700"
+              className="gap-1.5 bg-teal-600 text-white hover:bg-teal-700 cursor-pointer"
             >
               <Plus className="h-4 w-4" />
               <span>Add Task</span>
@@ -211,8 +211,8 @@ export function TaskList({ showHeader = true, maxItems = null }) {
       )}
 
       {/* Filter Tabs & Search */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white/70 p-2.5 border border-slate-200/70">
-        <div className="flex items-center gap-1.5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl bg-white/70 p-2.5 border border-slate-200/70">
+        <div className="flex flex-wrap items-center gap-1.5">
           {["all", "pending", "completed"].map((st) => (
             <button
               key={st}
@@ -228,14 +228,14 @@ export function TaskList({ showHeader = true, maxItems = null }) {
           ))}
         </div>
 
-        <div className="relative flex-1 sm:max-w-xs">
+        <div className="relative w-full sm:w-auto sm:max-w-xs flex-1">
           <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
           <input
             type="text"
             value={filter.searchQuery || ""}
             onChange={(e) => dispatch(setFilter({ searchQuery: e.target.value }))}
             placeholder="Search tasks..."
-            className="w-full rounded-xl border border-slate-200 bg-white pl-8 pr-3 py-1 text-xs text-slate-700 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none"
+            className="w-full rounded-xl border border-slate-200 bg-white pl-8 pr-3 py-1.5 text-xs text-slate-700 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none"
           />
         </div>
       </div>

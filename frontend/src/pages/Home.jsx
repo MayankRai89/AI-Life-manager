@@ -39,7 +39,7 @@ export function Home() {
       <NudgeBanner />
 
       {/* Greeting & Quick Stats Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-800">
             {getGreeting()},{" "}
@@ -47,13 +47,13 @@ export function Home() {
               {user?.name || "Friend"}
             </span>
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-xs sm:text-sm text-slate-500">
             Welcome to your calm command center. Let's pace your day smoothly.
           </p>
         </div>
 
         {/* Quick status pills */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="rounded-2xl border border-slate-200/80 bg-white px-4 py-2 shadow-xs">
             <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">
               Active Tasks
@@ -109,14 +109,14 @@ export function Home() {
       </section>
 
       {/* Dashboard Grid: AI Day Plan + Priority Task List */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
         {/* Left Column: AI Day Plan Card (7 cols on large screens) */}
-        <div className="lg:col-span-7 space-y-6">
+        <div className="lg:col-span-7 space-y-6 min-w-0">
           <DayPlanCard />
         </div>
 
         {/* Right Column: High Priority Action Items (5 cols on large screens) */}
-        <div className="lg:col-span-5 space-y-4">
+        <div className="lg:col-span-5 space-y-4 min-w-0 lg:sticky lg:top-24">
           <div className="flex items-center justify-between">
             <h3 className="text-base font-bold text-slate-800">Action Queue</h3>
             <Link

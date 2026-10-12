@@ -105,7 +105,7 @@ export function LandingPage() {
       {/* 2. HERO SECTION */}
       <section className="relative pt-16 pb-20 sm:pt-24 sm:pb-28 overflow-hidden">
         {/* Soft Ambient Background Elements */}
-        <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[520px] w-[900px] rounded-full bg-gradient-to-b from-teal-100/40 via-cyan-50/30 to-transparent blur-3xl -z-10" />
+        <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[520px] w-[900px] max-w-[95vw] rounded-full bg-gradient-to-b from-teal-100/40 via-cyan-50/30 to-transparent blur-3xl -z-10" />
 
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           {/* Calm Positioning Badge */}
@@ -189,7 +189,7 @@ export function LandingPage() {
                   <div className="h-3 w-3 rounded-full bg-rose-400/80" />
                   <div className="h-3 w-3 rounded-full bg-amber-400/80" />
                   <div className="h-3 w-3 rounded-full bg-teal-400/80" />
-                  <span className="ml-2 text-xs font-semibold text-slate-400">
+                  <span className="ml-2 text-xs font-semibold text-slate-400 truncate max-w-[200px] sm:max-w-xs">
                     AI Life Manager Dashboard — Today's Overview
                   </span>
                 </div>
@@ -214,7 +214,7 @@ export function LandingPage() {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
                   {moods.map((m) => {
                     const isSelected = activeMoodMock === m.id;
                     return (
@@ -590,7 +590,7 @@ export function LandingPage() {
 
       {/* 6. FINAL CTA */}
       <section className="py-20 sm:py-28 bg-[#fbfdfc] relative overflow-hidden">
-        <div className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 h-[350px] w-[700px] rounded-full bg-teal-100/30 blur-3xl -z-10" />
+        <div className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 h-[350px] w-[700px] max-w-[95vw] rounded-full bg-teal-100/30 blur-3xl -z-10" />
 
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
           <motion.div {...fadeInSlide} className="space-y-6">
@@ -638,7 +638,7 @@ export function LandingPage() {
             </div>
 
             {/* Links */}
-            <div className="flex items-center gap-6 text-xs font-semibold text-slate-500">
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-semibold text-slate-500">
               <a href="#features" className="hover:text-teal-700 transition">
                 Features
               </a>
