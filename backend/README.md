@@ -73,13 +73,13 @@ flowchart TD
     Controllers --> Services["Services Layer (src/services/)"]
 
     subgraph Services ["Business Logic & Integrations"]
-        AuthService["auth.services.js"]
+        AuthService["auth.service.js"]
         TaskService["task.service.js"]
         MoodService["mood.service.js"]
         subgraph AIEngine ["AI Orchestration Subsystem"]
             AIManager["ai.service.js"]
             TempService["temperature.service.js"]
-            Prompts["promptTemplet.js"]
+            Prompts["promptTemplate.js"]
         end
     end
 
