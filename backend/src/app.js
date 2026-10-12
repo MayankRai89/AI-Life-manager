@@ -10,7 +10,7 @@ import moodRoutes from "./routes/mood.routes.js";
 import aiRoutes from "./routes/ai.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import { errorHandler } from "./middleware/errorHandler.middleware.js";
-import logger from "./utils/Logger.js";
+import logger from "./utils/logger.js";
 
 const app = express();
 
