@@ -6,6 +6,7 @@ import DayPlan from "../model/dayPlan.model.js";
 import Task from "../model/task.model.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { AppError } from "../middleware/errorHandler.middleware.js";
+import { PROMPT_VERSION } from "../services/ai/promptTemplet.js";
 
 /**
  * @desc    Get a personalized daily plan based on current mood + tasks.
@@ -220,6 +221,7 @@ export const getDailySuggestion = asyncHandler(async (req, res) => {
       orderedTaskIds,
       provider: providerUsed,
       providerUsed,
+      promptVersion: PROMPT_VERSION,
     },
     { upsert: true, returnDocument: "after", runValidators: true }
   );
@@ -384,11 +386,14 @@ export const rateDayPlanFeedback = asyncHandler(async (req, res) => {
     throw new AppError("Day plan not found or unauthorized", 404);
   }
 
-  plan.feedback = {
+  const feedbackPayload = {
     rating,
     reason: reason ? String(reason).trim().slice(0, 200) : "",
     ratedAt: new Date(),
   };
+
+  plan.feedback = feedbackPayload;
+  plan.userFeedback = feedbackPayload;
 
   await plan.save();
 

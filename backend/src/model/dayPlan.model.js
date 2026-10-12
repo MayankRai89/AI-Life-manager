@@ -114,9 +114,27 @@ const dayPlanSchema = new mongoose.Schema(
         type: Date,
       },
     },
+    userFeedback: {
+      rating: {
+        type: String,
+        enum: ["up", "down"],
+      },
+      reason: {
+        type: String,
+        trim: true,
+        maxlength: 200,
+      },
+      ratedAt: {
+        type: Date,
+      },
+    },
     providerUsed: {
       type: String,
       default: "ai",
+    },
+    promptVersion: {
+      type: String,
+      default: "v0",
     },
   },
   {

@@ -746,6 +746,7 @@ To configure the CI/CD pipeline on GitHub, navigate to **Settings > Secrets and 
 | `COHERE_API_KEY`      | String | Optional\*                                     | API Key for Cohere Command-R                                  |
 | `AI_MODE`             | String | `fallback`                                     | LLM invocation strategy: `fallback` or `fanout`               |
 | `AI_PROVIDER_ORDER`   | String | `gemini,mistral,cohere`                        | Comma-separated preference order for fallback mode            |
+| `PROMPT_VERSION`       | String | `v1`                                           | Active prompt template version stamped onto generated DayPlans |
 | `SMTP_HOST`           | String | Optional                                       | SMTP host for password reset emails (console fallback in dev) |
 | `SMTP_PORT`           | Number | `587`                                          | SMTP port (e.g. 587 for TLS, 465 for SSL)                     |
 | `SMTP_USER`           | String | Optional                                       | SMTP authentication username                                  |

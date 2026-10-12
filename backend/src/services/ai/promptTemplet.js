@@ -8,6 +8,11 @@
  */
 
 /**
+ * Prompt Template Version identifier
+ */
+export const PROMPT_VERSION = process.env.PROMPT_VERSION || "v1";
+
+/**
  * System persona injected into every prompt
  */
 export const SYSTEM_PERSONA = `You are an empathetic and intelligent AI Life Manager assistant.
