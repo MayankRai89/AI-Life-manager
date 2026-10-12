@@ -1,7 +1,7 @@
 import MoodCheckIn from "../model/moodCheckIns.model.js";
 import Task from "../model/task.model.js";
 import { AppError } from "../middleware/errorHandler.middleware.js";
-import logger from "../utils/Logger.js";
+import logger from "../utils/logger.js";
 import { getDerivedContext } from "./ai/ai.service.js";
 
 /**

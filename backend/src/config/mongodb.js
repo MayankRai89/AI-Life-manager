@@ -1,6 +1,6 @@
 import dns from "node:dns";
 import mongoose from "mongoose";
-import logger from "../utils/Logger.js";
+import logger from "../utils/logger.js";
 
 async function connectDB() {
   const options = {
