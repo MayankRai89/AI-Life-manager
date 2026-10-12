@@ -73,13 +73,13 @@ flowchart TD
     Controllers --> Services["Services Layer (src/services/)"]
 
     subgraph Services ["Business Logic & Integrations"]
-        AuthService["auth.services.js"]
+        AuthService["auth.service.js"]
         TaskService["task.service.js"]
         MoodService["mood.service.js"]
         subgraph AIEngine ["AI Orchestration Subsystem"]
             AIManager["ai.service.js"]
             TempService["temperature.service.js"]
-            Prompts["promptTemplet.js"]
+            Prompts["promptTemplate.js"]
         end
     end
 
@@ -135,16 +135,25 @@ backend/
     │   ├── mood.routes.js         # /api/moods endpoints
     │   └── task.routes.js         # /api/tasks endpoints
     ├── services/
-    │   ├── auth.services.js       # Token signing & verification helpers
+    │   ├── auth.service.js        # Token signing & verification helpers
     │   ├── mood.service.js        # Analytics calculation & mood aggregations
     │   ├── task.service.js        # Task filtering, pagination & status logic
     │   └── ai/
     │       ├── ai.service.js      # Multi-provider fallback/fanout engine & JSON parser
-    │       ├── promptTemplet.js   # Dynamic prompt builders with medical/mood context
+    │       ├── promptTemplate.js  # Dynamic prompt builders with medical/mood context
     │       └── temperature.service.js # Dynamic temperature selector by task type
     └── utils/
         ├── asyncHandler.js        # Asynchronous route wrapper
-        └── Logger.js              # Winston / structured console logging
+        └── logger.js              # Structured console logging
+├── tests/                         # Vitest automated test suite (in-memory MongoDB)
+│   ├── setup.js                   # Test environment bootstrap & in-memory Mongo setup
+│   ├── auth.test.js               # Registration, cookie httpOnly, validation & role protection
+│   ├── admin.test.js              # RBAC verification & telemetry privacy guarantees
+│   ├── mood.test.js               # Mood CRUD & frontend/backend enum sync
+│   ├── ai.service.test.js         # Multi-provider fallback orchestrator unit tests
+│   ├── privacy.test.js            # Health flag privacy sanitization
+│   └── errorHandler.test.js       # Production error formatting & validation handling
+└── vitest.config.js               # Vitest runner configuration
 ```
 
 ---
@@ -785,6 +794,35 @@ To configure the CI/CD pipeline on GitHub, navigate to **Settings > Secrets and 
 | `SMTP_USER`           | String | Optional                                       | SMTP authentication username                                  |
 | `SMTP_PASS`           | String | Optional                                       | SMTP authentication password                                  |
 | `EMAIL_FROM`          | String | `AI Life Manager <no-reply@ailifemanager.app>` | Outgoing sender display email                                 |
+
+---
+
+## 🧪 Automated Testing
+
+The backend includes a comprehensive automated test suite powered by **Vitest**, **supertest**, and **mongodb-memory-server**. Tests execute fully isolated without requiring external database connections, real API keys, or live network calls.
+
+### Running Tests
+
+```bash
+# Run all tests once
+npm test
+
+# Run tests in watch mode during development
+npm run test:watch
+
+# Run Node syntax check across entry points
+npm run check
+```
+
+### Test Coverage Areas
+
+1. **Authentication (`tests/auth.test.js`)**: Registration, HttpOnly cookie generation, minimum password length enforcement, login authentication, and immutable role protection.
+2. **Admin RBAC & Telemetry (`tests/admin.test.js`)**: Authorization boundaries (401 logged out, 403 user, 200 admin) and strict PII prevention.
+3. **Mood & Schema Compatibility (`tests/mood.test.js`)**: Mood check-in CRUD, Mongoose enum validation, and synchronization against frontend `MOOD_VALUES`.
+4. **AI Orchestrator (`tests/ai.service.test.js`)**: Multi-provider fallback runner, provider failure recovery, JSON schema validation, and order enforcement.
+5. **Privacy Safeguards (`tests/privacy.test.js`)**: Health flag abstraction and consent verification.
+6. **Error Handling (`tests/errorHandler.test.js`)**: Production stack suppression and Mongoose validation formatting.
+
 
 _\*At least one AI API key is required to utilize personalized Day Planning, Task Prioritization, and Chat capabilities._
 

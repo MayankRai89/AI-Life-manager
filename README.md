@@ -10,14 +10,17 @@
 AI_Life Manager/
 ├── .github/
 │   └── workflows/
-│       └── backend-ci-cd.yml      # Automated Backend CI/CD Pipeline (Lint, Test, Docker Buildx, GHCR, Deploy)
+│       ├── backend-ci-cd.yml      # Automated Backend CI/CD Pipeline (Lint, Test, Docker Buildx, GHCR, Deploy)
+│       └── frontend-ci.yml        # Frontend CI Pipeline (npm ci, lint, build)
 ├── backend/                       # Express 5, MongoDB / Atlas, Multi-LLM API Service
 │   ├── src/                       # Models, Controllers, Services, AI Orchestrator
+│   ├── tests/                     # Automated Vitest test suite with in-memory MongoDB
 │   ├── Dockerfile                 # Multi-stage container definition (Node.js)
 │   ├── README.md                  # Comprehensive Backend Architecture & API Documentation
 │   └── package.json
 ├── frontend/                      # React 19, Vite, Redux Toolkit, Tailwind CSS Client
 │   ├── src/                       # Components, Views, Redux Slices, API Client
+│   │   └── constants/             # Single source of truth for mood & capacity options
 │   ├── nginx.conf                 # Production Nginx reverse proxy & SPA routing config
 │   ├── Dockerfile                 # Production multi-stage build (Vite build + Nginx runner)
 │   └── package.json
@@ -28,9 +31,9 @@ AI_Life Manager/
 
 ## 🚀 Quick Links & Documentation
 
-- \*\*[Backend Service Documentation]: Full architecture breakdown, Entity-Relationship diagrams, detailed data models, AI orchestration logic (Gemini, Mistral, Cohere), and complete API endpoint specifications.
+- **[Backend Service Documentation](file:///e:/AI_Life%20Manager/backend/README.md)**: Full architecture breakdown, Entity-Relationship diagrams, detailed data models, AI orchestration logic (Gemini, Mistral, Cohere), and complete API endpoint specifications.
 
-- \*\*[CI/CD Workflow Specification]: Continuous integration, live MongoDB health test, multi-stage Docker build, GHCR publishing, and deployment webhook triggers.
+- **[CI/CD Workflow Specification](file:///e:/AI_Life%20Manager/.github/workflows/backend-ci-cd.yml)**: Continuous integration, automated test suite, live MongoDB health test, multi-stage Docker build, GHCR publishing, and deployment webhook triggers.
 
 ---
 
@@ -45,6 +48,11 @@ cd backend
 npm install
 cp .env.example .env     # Add your MongoDB URI (Local or Atlas) & AI API keys
 npm run dev              # Starts Express on http://localhost:3000
+
+# Automated tests & syntax checks
+npm test                 # Runs Vitest automated test suite (in-memory MongoDB)
+npm run test:watch       # Runs Vitest in watch mode
+npm run check            # Runs Node syntax check across server entry points
 ```
 
 ### 2. Frontend Client
@@ -53,9 +61,12 @@ npm run dev              # Starts Express on http://localhost:3000
 cd frontend
 npm install
 npm run dev              # Starts Vite dev server on http://localhost:5173
+npm run lint             # Runs ESLint (flat config, react-hooks & react-refresh)
+npm run build            # Builds production bundle via Vite
 ```
 
 ---
+
 
 ## 🛡 Admin Dashboard & Feedback Telemetry
 
