@@ -5,7 +5,8 @@ import {
   setSelectedMoodPreset,
 } from "../redux/slices/moodSlice";
 import { fetchAIDayPlan, fetchAIPrioritizedTasks } from "../redux/slices/aiSlice";
-import { PRESET_MOODS } from "../mock/mockData";
+import { MOOD_OPTIONS } from "../constants/moods";
+import { CAPACITY_OPTIONS } from "../constants/capacity";
 import { Button } from "./ui/Button";
 import { VoiceInputButton } from "./VoiceInputButton";
 import {
@@ -16,40 +17,8 @@ import {
   BatteryMedium,
   ShieldAlert,
   Clock,
-  Zap,
-  Minus,
-  Feather,
 } from "lucide-react";
 
-const CAPACITY_OPTIONS = [
-  {
-    value: "high",
-    label: "I can take on a lot",
-    icon: Zap,
-    iconColor: "text-emerald-600",
-    selectedRing: "ring-emerald-500",
-    selectedBg: "bg-emerald-50",
-    selectedText: "text-emerald-800",
-  },
-  {
-    value: "normal",
-    label: "Normal day",
-    icon: Minus,
-    iconColor: "text-teal-600",
-    selectedRing: "ring-teal-500",
-    selectedBg: "bg-teal-50",
-    selectedText: "text-teal-800",
-  },
-  {
-    value: "light",
-    label: "I need to keep things light",
-    icon: Feather,
-    iconColor: "text-violet-600",
-    selectedRing: "ring-violet-400",
-    selectedBg: "bg-violet-50",
-    selectedText: "text-violet-800",
-  },
-];
 
 export function MoodCheckin({ onSuccess, className = "" } = {}) {
   const dispatch = useDispatch();
@@ -91,7 +60,7 @@ export function MoodCheckin({ onSuccess, className = "" } = {}) {
   }, []);
 
   const activePreset =
-    PRESET_MOODS.find((m) => m.id === selectedMoodPreset) || PRESET_MOODS[1];
+    MOOD_OPTIONS.find((m) => (m.value || m.id) === selectedMoodPreset) || MOOD_OPTIONS[1];
 
   const handleSelectMood = (preset) => {
     dispatch(setSelectedMoodPreset(preset.id));
@@ -194,8 +163,8 @@ export function MoodCheckin({ onSuccess, className = "" } = {}) {
 
       {/* Preset Mood Buttons (Aceternity-inspired glowing interactive cards) */}
       <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5 pt-2">
-        {PRESET_MOODS.map((preset) => {
-          const isSelected = selectedMoodPreset === preset.id;
+        {MOOD_OPTIONS.map((preset) => {
+          const isSelected = selectedMoodPreset === (preset.value || preset.id);
           return (
             <button
               key={preset.id}
