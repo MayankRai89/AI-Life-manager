@@ -1,4 +1,4 @@
-import { verifyToken } from "../services/auth.services.js";
+import { verifyToken } from "../services/auth.service.js";
 import User from "../model/user.model.js";
 
 export const protect = async (req, res, next) => {
