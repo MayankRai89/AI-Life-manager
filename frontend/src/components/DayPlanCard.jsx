@@ -137,7 +137,7 @@ export function parseDayPlan(rawPlan, tasks = []) {
   const taskHeaderMatch = textToParse.match(
     /(?:###\s*\d*\.?\s*)?(?:Top\s*\d*\s*Focus Tasks[^\n]*)/i
   );
-  let summary = "";
+  let summary;
   let tasksBlock = "";
   let wellnessBlock = "";
   let notesBlock = "";
